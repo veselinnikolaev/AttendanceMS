@@ -13,7 +13,7 @@ import java.util.List;
 public class UserIdService {
     private final UserIdRepository userIdRepository;
 
-    public UserId saveIdLong(Long id) {
+    public UserId saveIdLongIfNotExists(Long id) {
         List<Long> userIds = userIdRepository.findAll().stream().map(UserId::getUserId).toList();
         if(userIds.contains(id)) {
             return userIdRepository.findByUserId(id).orElseThrow(() -> new RuntimeException("User not found"));
@@ -22,9 +22,9 @@ public class UserIdService {
         return userIdRepository.save(userId);
     }
 
-    public List<UserId> saveIdsLong(Long[] ids) {
+    public List<UserId> saveIdsLongIfNotExist(List<Long> ids) {
         List<Long> userIds = userIdRepository.findAll().stream().map(UserId::getUserId).toList();
-        List<UserId> userIdsMapped = Arrays.stream(ids).map(id -> new UserId().setUserId(id)).toList();
+        List<UserId> userIdsMapped = ids.stream().map(id -> new UserId().setUserId(id)).toList();
 
         List<UserId> userIdsToSave = userIdsMapped.stream()
                 .filter(id -> !userIds.contains(id.getUserId()))

@@ -5,11 +5,9 @@ import me.veso.categoryservice.dto.CategoryCreationDto;
 import me.veso.categoryservice.dto.CategoryDetailsDto;
 import me.veso.categoryservice.dto.CategoryUpdateDto;
 import me.veso.categoryservice.entity.Category;
-import me.veso.categoryservice.entity.UserId;
 import me.veso.categoryservice.repository.CategoryRepository;
 import org.springframework.stereotype.Service;
 
-import java.util.Arrays;
 import java.util.List;
 
 @Service
@@ -21,8 +19,8 @@ public class CategoryService {
     public CategoryDetailsDto createCategory(CategoryCreationDto categoryCreationDto) {
         Category category = new Category()
                 .setName(categoryCreationDto.getName())
-                .setChecker(userIdService.saveIdLong(categoryCreationDto.getCheckerId()))
-                .setAttendants(userIdService.saveIdsLong(categoryCreationDto.getAttendantsIds()));
+                .setChecker(userIdService.saveIdLongIfNotExists(categoryCreationDto.getCheckerId()))
+                .setAttendants(userIdService.saveIdsLongIfNotExist(categoryCreationDto.getAttendantsIds()));
 
         return new CategoryDetailsDto(categoryRepository.save(category));
     }
@@ -30,8 +28,8 @@ public class CategoryService {
     public CategoryDetailsDto updateCategory(Long id, CategoryUpdateDto categoryUpdateDto) {
         Category category = new Category()
                 .setName(categoryUpdateDto.getName())
-                .setChecker(userIdService.saveIdLong(categoryUpdateDto.getCheckerId()))
-                .setAttendants(userIdService.saveIdsLong(categoryUpdateDto.getAttendantsIds()));
+                .setChecker(userIdService.saveIdLongIfNotExists(categoryUpdateDto.getCheckerId()))
+                .setAttendants(userIdService.saveIdsLongIfNotExist(categoryUpdateDto.getAttendantsIds()));
         category.setId(id);
 
         return new CategoryDetailsDto(categoryRepository.save(category));
@@ -41,9 +39,9 @@ public class CategoryService {
         categoryRepository.deleteById(id);
     }
 
-    public CategoryDetailsDto assignAttendantsToCategory(Long id, Long[] attendantsIds) {
+    public CategoryDetailsDto assignAttendantsToCategory(Long id, List<Long> attendantsIds) {
         Category category = categoryRepository.findById(id).orElseThrow(() -> new RuntimeException("Category not found"));
-        category.addAttendants(userIdService.saveIdsLong(attendantsIds));
+        category.addAttendants(userIdService.saveIdsLongIfNotExist(attendantsIds));
         categoryRepository.save(category);
         return new CategoryDetailsDto(category);
     }

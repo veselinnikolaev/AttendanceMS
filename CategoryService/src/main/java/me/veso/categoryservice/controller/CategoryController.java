@@ -8,6 +8,8 @@ import me.veso.categoryservice.service.CategoryService;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/categories")
 @RequiredArgsConstructor
@@ -34,7 +36,7 @@ public class CategoryController {
 
     @PostMapping("/{id}/assign")
     @ResponseStatus(HttpStatus.OK)
-    public CategoryDetailsDto assignAttendantsToCategory(@PathVariable("id") Long id, @RequestBody Long[] attendantsIds) {
+    public CategoryDetailsDto assignAttendantsToCategory(@PathVariable("id") Long id, @RequestBody List<Long> attendantsIds) {
         return categoryService.assignAttendantsToCategory(id, attendantsIds);
     }
 
