@@ -1,10 +1,13 @@
 package me.veso.attendanceservice.controller;
 
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
 import me.veso.attendanceservice.dto.AttendanceCreationDto;
 import me.veso.attendanceservice.dto.AttendanceDetailsDto;
 import me.veso.attendanceservice.service.AttendanceService;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -16,20 +19,17 @@ public class AttendanceController {
     private final AttendanceService attendanceService;
 
     @PostMapping
-    @ResponseStatus(HttpStatus.CREATED)
-    public AttendanceDetailsDto createAttendance(@RequestBody AttendanceCreationDto attendanceCreationDto) {
-        return attendanceService.createAttendance(attendanceCreationDto);
+    public ResponseEntity<AttendanceDetailsDto> createAttendance(@Valid @RequestBody AttendanceCreationDto attendanceCreationDto) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(attendanceService.createAttendance(attendanceCreationDto));
     }
 
-    @GetMapping("/{categoryId}")
-    @ResponseStatus(HttpStatus.OK)
-    public List<AttendanceDetailsDto> getAttendance(@PathVariable Long categoryId) {
-        return attendanceService.getAttendanceForCategory(categoryId);
+    @GetMapping("/category/{categoryId}")
+    public ResponseEntity<List<AttendanceDetailsDto>> getAttendance(@Positive(message = "Category id must be positive") @PathVariable Long categoryId) {
+        return ResponseEntity.ok(attendanceService.getAttendanceForCategory(categoryId));
     }
 
     @GetMapping("/user/{userId}")
-    @ResponseStatus(HttpStatus.OK)
-    public List<AttendanceDetailsDto> getAttendanceForUser(@PathVariable Long userId) {
-        return attendanceService.getAttendanceForUser(userId);
+    public ResponseEntity<List<AttendanceDetailsDto>> getAttendanceForUser(@Positive(message = "User id must be positive") @PathVariable Long userId) {
+        return ResponseEntity.ok(attendanceService.getAttendanceForUser(userId));
     }
 }

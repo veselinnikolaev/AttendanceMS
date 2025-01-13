@@ -1,11 +1,14 @@
 package me.veso.categoryservice.controller;
 
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
 import me.veso.categoryservice.dto.CategoryCreationDto;
 import me.veso.categoryservice.dto.CategoryDetailsDto;
 import me.veso.categoryservice.dto.CategoryUpdateDto;
 import me.veso.categoryservice.service.CategoryService;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -17,15 +20,15 @@ public class CategoryController {
     private final CategoryService categoryService;
 
     @PostMapping
-    @ResponseStatus(HttpStatus.CREATED)
-    public CategoryDetailsDto createCategory(@RequestBody CategoryCreationDto categoryCreationDto) {
-        return categoryService.createCategory(categoryCreationDto);
+    public ResponseEntity<CategoryDetailsDto> createCategory(@RequestBody CategoryCreationDto categoryCreationDto) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(categoryService.createCategory(categoryCreationDto));
     }
 
     @PutMapping("/{id}")
-    @ResponseStatus(HttpStatus.OK)
-    public CategoryDetailsDto updateCategory(@PathVariable("id") Long id, @RequestBody CategoryUpdateDto categoryUpdateDto) {
-        return categoryService.updateCategory(id, categoryUpdateDto);
+    public ResponseEntity<CategoryDetailsDto> updateCategory(
+            @Positive(message = "Category id must be positive") @PathVariable("id") Long id,
+            @Valid @RequestBody CategoryUpdateDto categoryUpdateDto) {
+        return ResponseEntity.ok(categoryService.updateCategory(id, categoryUpdateDto));
     }
 
     @DeleteMapping("/{id}")
@@ -35,14 +38,15 @@ public class CategoryController {
     }
 
     @PostMapping("/{id}/assign")
-    @ResponseStatus(HttpStatus.OK)
-    public CategoryDetailsDto assignAttendantsToCategory(@PathVariable("id") Long id, @RequestBody List<Long> attendantsIds) {
-        return categoryService.assignAttendantsToCategory(id, attendantsIds);
+    public ResponseEntity<CategoryDetailsDto> assignAttendantsToCategory(
+            @Positive(message = "Category id must be positive") @PathVariable("id") Long id,
+            @Valid @RequestBody List<Long> attendantsIds) {
+        return ResponseEntity.ok(categoryService.assignAttendantsToCategory(id, attendantsIds));
     }
 
     @GetMapping("/{id}")
-    @ResponseStatus(HttpStatus.OK)
-    public CategoryDetailsDto getCategory(@PathVariable("id") Long id) {
-        return categoryService.getCategory(id);
+    public ResponseEntity<CategoryDetailsDto> getCategory(
+            @Positive(message = "Category id must be positive") @PathVariable("id") Long id) {
+        return ResponseEntity.ok(categoryService.getCategory(id));
     }
 }
