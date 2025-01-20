@@ -1,0 +1,23 @@
+CREATE TABLE users
+(
+    id      BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT NOT NULL
+);
+
+CREATE TABLE categories
+(
+    id          BIGINT AUTO_INCREMENT PRIMARY KEY,
+    category_id BIGINT NOT NULL
+);
+
+CREATE TABLE attendance
+(
+    id          BIGINT AUTO_INCREMENT PRIMARY KEY,
+    status      VARCHAR(255) NOT NULL,
+    email_sent  BOOLEAN      NOT NULL,
+    created_at  DATETIME     NOT NULL,
+    user_id     BIGINT       NOT NULL,
+    category_id BIGINT       NOT NULL,
+    CONSTRAINT fk_user FOREIGN KEY (user_id) REFERENCES user_id (id),
+    CONSTRAINT fk_category FOREIGN KEY (category_id) REFERENCES category_id (id)
+);
