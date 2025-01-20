@@ -4,6 +4,9 @@ server:
 spring:
   application:
     name: CATEGORY_SERVICE
+  data:
+    mongodb:
+      uri: mongodb+srv://root:12345@veso.j5wqi.mongodb.net/user_service
 
 eureka:
   client:

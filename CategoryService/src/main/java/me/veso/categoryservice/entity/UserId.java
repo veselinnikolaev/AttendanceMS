@@ -1,14 +1,16 @@
 package me.veso.categoryservice.entity;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.mapping.Field;
 import lombok.Getter;
 import lombok.Setter;
 
-@Entity
+@Document(collection = "userIds")
 @Getter
+@Setter
 public class UserId extends ObjectWithId {
-    @Column(nullable = false)
+    @Field(name = "user_id")
     private Long userId;
 
     public UserId setUserId(Long userId) {

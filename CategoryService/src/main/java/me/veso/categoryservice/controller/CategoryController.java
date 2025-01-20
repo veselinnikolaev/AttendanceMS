@@ -1,7 +1,7 @@
 package me.veso.categoryservice.controller;
 
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import me.veso.categoryservice.dto.CategoryCreationDto;
 import me.veso.categoryservice.dto.CategoryDetailsDto;
@@ -28,7 +28,7 @@ public class CategoryController {
     @PutMapping("/{id}")
     @Validated
     public ResponseEntity<CategoryDetailsDto> updateCategory(
-            @Positive(message = "Category id must be positive") @PathVariable("id") Long id,
+            @NotBlank(message = "Category id is required") @PathVariable("id") String id,
             @Valid @RequestBody CategoryUpdateDto categoryUpdateDto) {
         return ResponseEntity.ok(categoryService.updateCategory(id, categoryUpdateDto));
     }
@@ -36,14 +36,14 @@ public class CategoryController {
     @DeleteMapping("/{id}")
     @Validated
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void deleteCategory(@PathVariable("id") Long id) {
+    public void deleteCategory(@NotBlank(message = "Category id is required") @PathVariable("id") String id) {
         categoryService.deleteCategory(id);
     }
 
     @PostMapping("/{id}/assign")
     @Validated
     public ResponseEntity<CategoryDetailsDto> assignAttendantsToCategory(
-            @Positive(message = "Category id must be positive") @PathVariable("id") Long id,
+            @NotBlank(message = "Category id is required") @PathVariable("id") String id,
             @Valid @RequestBody List<Long> attendantsIds) {
         return ResponseEntity.ok(categoryService.assignAttendantsToCategory(id, attendantsIds));
     }
@@ -51,7 +51,7 @@ public class CategoryController {
     @GetMapping("/{id}")
     @Validated
     public ResponseEntity<CategoryDetailsDto> getCategory(
-            @Positive(message = "Category id must be positive") @PathVariable("id") Long id) {
+            @NotBlank(message = "Category id is required") @PathVariable("id") String id) {
         return ResponseEntity.ok(categoryService.getCategory(id));
     }
 }

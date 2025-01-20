@@ -25,7 +25,7 @@ public class CategoryService {
         return new CategoryDetailsDto(categoryRepository.save(category));
     }
 
-    public CategoryDetailsDto updateCategory(Long id, CategoryUpdateDto categoryUpdateDto) {
+    public CategoryDetailsDto updateCategory(String id, CategoryUpdateDto categoryUpdateDto) {
         Category category = new Category()
                 .setName(categoryUpdateDto.getName())
                 .setChecker(userIdService.saveIdLongIfNotExists(categoryUpdateDto.getCheckerId()))
@@ -35,18 +35,18 @@ public class CategoryService {
         return new CategoryDetailsDto(categoryRepository.save(category));
     }
 
-    public void deleteCategory(Long id) {
+    public void deleteCategory(String id) {
         categoryRepository.deleteById(id);
     }
 
-    public CategoryDetailsDto assignAttendantsToCategory(Long id, List<Long> attendantsIds) {
+    public CategoryDetailsDto assignAttendantsToCategory(String id, List<Long> attendantsIds) {
         Category category = categoryRepository.findById(id).orElseThrow(() -> new RuntimeException("Category not found"));
         category.addAttendants(userIdService.saveIdsLongIfNotExist(attendantsIds));
         categoryRepository.save(category);
         return new CategoryDetailsDto(category);
     }
 
-    public CategoryDetailsDto getCategory(Long id) {
+    public CategoryDetailsDto getCategory(String id) {
         return new CategoryDetailsDto(categoryRepository.findById(id).orElseThrow(() -> new RuntimeException("Category not found")));
     }
 }

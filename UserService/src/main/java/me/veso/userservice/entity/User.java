@@ -18,8 +18,10 @@ public class User extends ObjectWithId {
     @Column(nullable = false)
     private String role;
     private String status = "pending";
+    @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
-    private LocalDateTime processedAt = LocalDateTime.now();
+    @Column(name = "processed_at", nullable = false)
+    private LocalDateTime processedAt;
     @ManyToMany
     private List<CategoryId> categories;
 

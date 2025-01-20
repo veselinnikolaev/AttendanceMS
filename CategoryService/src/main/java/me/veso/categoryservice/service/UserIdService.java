@@ -5,7 +5,6 @@ import me.veso.categoryservice.entity.UserId;
 import me.veso.categoryservice.repository.UserIdRepository;
 import org.springframework.stereotype.Service;
 
-import java.util.Arrays;
 import java.util.List;
 
 @Service

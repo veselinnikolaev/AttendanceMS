@@ -1,24 +1,24 @@
 package me.veso.categoryservice.entity;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.ManyToMany;
-import jakarta.persistence.ManyToOne;
+import org.springframework.data.mongodb.core.mapping.DBRef;
+import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.mapping.Field;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import me.veso.categoryservice.dto.CategoryUpdateDto;
 
 import java.util.List;
 
-@Entity
+@Document(collection = "categories")
 @Getter
 @NoArgsConstructor
 public class Category extends ObjectWithId {
-    @Column(nullable = false)
+    @Field("name")
     private String name;
-    @ManyToOne
+
+    @DBRef
     private UserId checker;
-    @ManyToMany
+
+    @DBRef
     private List<UserId> attendants;
 
     public Category setName(String name) {

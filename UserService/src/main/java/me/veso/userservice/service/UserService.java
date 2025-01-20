@@ -10,6 +10,7 @@ import me.veso.userservice.repository.UserRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -41,7 +42,7 @@ public class UserService {
 
     @Transactional
     public UserStatusDto validateRegistration(Long id, String status) {
-        userRepository.updateStatus(id, status);
+        userRepository.updateStatus(id, status, LocalDateTime.now());
         return new UserStatusDto(id, status);
     }
 
