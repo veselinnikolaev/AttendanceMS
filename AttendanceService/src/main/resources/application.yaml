@@ -12,11 +12,17 @@ spring:
   jpa:
     hibernate:
       ddl-auto: none
-      naming:
-        physical-strategy: org.hibernate.boot.model.naming.CamelCaseToUnderscoresNamingStrategy
     show-sql: true
+  flyway:
+    locations: classpath:db/migration
+    enabled: true
 
 eureka:
   client:
     service-url:
       defaultZone : http://localhost:8761/eureka/
+
+logging:
+  level:
+    org:
+      flywaydb: DEBUG

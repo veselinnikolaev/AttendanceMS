@@ -1,5 +1,6 @@
 package me.veso.attendanceservice.entity;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 import lombok.Getter;
@@ -8,6 +9,7 @@ import lombok.Getter;
 @Getter
 @Table(name = "users")
 public class UserId extends ObjectWithId {
+    @Column(name = "user_id", nullable = false)
     private Long userId;
 
     public UserId setUserId(Long userId) {

@@ -9,6 +9,6 @@ import lombok.Getter;
 @Getter
 @Table(name = "categories")
 public class CategoryId extends ObjectWithId {
-    @Column(nullable = false)
+    @Column(name = "category_id", nullable = false)
     private Long categoryId;
 }

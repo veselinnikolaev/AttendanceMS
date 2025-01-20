@@ -11,9 +11,7 @@ spring:
     password: 12345
   jpa:
     hibernate:
-      ddl-auto: none
-      naming:
-        physical-strategy: org.hibernate.boot.model.naming.CamelCaseToUnderscoresNamingStrategy
+      ddl-auto: update
     show-sql: true
 
 eureka:

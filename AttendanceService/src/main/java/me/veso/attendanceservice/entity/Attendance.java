@@ -2,6 +2,7 @@ package me.veso.attendanceservice.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import lombok.Getter;
 
@@ -14,11 +15,13 @@ public class Attendance extends ObjectWithId {
     private String status;
     @Column(nullable = false)
     private boolean emailSent;
-    @Column(nullable = false)
+    @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
     @ManyToOne
+    @JoinColumn(name = "user_id", nullable = false)
     private UserId user;
     @ManyToOne
+    @JoinColumn(name = "category_id", nullable = false)
     private CategoryId category;
 
     public Attendance setStatus(String status) {
