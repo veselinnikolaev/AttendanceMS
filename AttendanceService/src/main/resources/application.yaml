@@ -2,8 +2,24 @@ server:
   port: 0
 
 spring:
-  profiles:
-    active: vault
+  application:
+    name: ATTENDANCE_SERVICE
+  config:
+    import: vault://
+  cloud:
+    vault:
+      uri: http://127.0.0.1:8200
+      authentication: TOKEN
+      token: hvs.gYf2BKuupqVgQS1ItdRafoUw
+      kv:
+        enabled: true
+        backend: secret
+        default-context: database
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/attendance_service?allowPublicKeyRetrieval=true&useSSL=false&createDatabaseIfNotExist=true&serverTimezone=UTC
+    username: ${mysql.username}
+    password: ${mysql.password}
   jpa:
     hibernate:
       ddl-auto: none
