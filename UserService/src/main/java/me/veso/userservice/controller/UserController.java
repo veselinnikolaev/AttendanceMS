@@ -1,6 +1,8 @@
 package me.veso.userservice.controller;
 
+import jakarta.annotation.Nullable;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
@@ -36,8 +38,15 @@ public class UserController {
     }
 
     @GetMapping
-    public ResponseEntity<List<UserDetailsDto>> getAllUsers() {
-        return ResponseEntity.ok(userService.getAllUsers());
+    @Validated
+    public ResponseEntity<List<UserDetailsDto>> getAllUsers(
+            @Nullable
+            @Pattern(regexp = "^(approved|denied|pending)$", message = "Status must be either approved, denied or pending")
+            @RequestParam(value = "status", required = false) String status) {
+        List<UserDetailsDto> users = (status == null)
+                ? userService.getAllUsers()
+                : userService.getAllUsersByStatus(status);
+        return ResponseEntity.ok(users);
     }
 
     @GetMapping("/{id}")
@@ -45,5 +54,12 @@ public class UserController {
     public ResponseEntity<UserDetailsDto> getUser(
             @Positive(message = "User id must be positive") @PathVariable("id") Long id) {
         return ResponseEntity.ok(userService.getUser(id));
+    }
+
+    @GetMapping("/{username}")
+    @Validated
+    public ResponseEntity<UserDetailsDto> getUserByUsername(
+            @NotBlank(message = "Username must not be blank") @PathVariable("username") String username) {
+        return ResponseEntity.ok(userService.getUserByUsername(username));
     }
 }

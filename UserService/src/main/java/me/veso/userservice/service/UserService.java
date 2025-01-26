@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -23,10 +24,14 @@ public class UserService {
         if (!userRegisterDto.getPassword().equals(userRegisterDto.getConfirmPassword())) {
             throw new RuntimeException("Passwords do not match");
         }
-        if (userRepository.existsByUsername(userRegisterDto.getUsername())) {
+
+        List<User> users = userRepository.findAll();
+        if (users
+                .stream().anyMatch(user -> user.getUsername().equals(userRegisterDto.getUsername()))) {
             throw new RuntimeException("Username already exists");
         }
-        if (userRepository.existsByEmail(userRegisterDto.getEmail())) {
+        if (users.stream()
+                .anyMatch(user -> user.getEmail().equals(userRegisterDto.getEmail()))) {
             throw new RuntimeException("Email already exists");
         }
 
@@ -55,6 +60,19 @@ public class UserService {
 
     public UserDetailsDto getUser(Long id) {
         return new UserDetailsDto(userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("User not found")));
+                .orElseThrow(() -> new RuntimeException("User with id " + id + " found")));
+    }
+
+    public List<UserDetailsDto> getAllUsersByStatus(String status) {
+        return userRepository.findAllByStatus(status)
+                .stream()
+                .map(UserDetailsDto::new)
+                .collect(Collectors.toList());
+    }
+
+    public UserDetailsDto getUserByUsername(String username) {
+        return new UserDetailsDto(userRepository
+                .findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User with username " + username + " not found")));
     }
 }
