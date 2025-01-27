@@ -1,13 +1,11 @@
 package me.veso.authservice.dto;
 
+import lombok.AllArgsConstructor;
 import lombok.Getter;
-import lombok.Setter;
 
 @Getter
-@Setter
-public class UserDetailsDto {
+@AllArgsConstructor
+public class RoleResponse {
     private String username;
-    private String passwordHash;
     private String role;
-    private String status;
 }

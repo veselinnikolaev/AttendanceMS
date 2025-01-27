@@ -17,7 +17,7 @@ public class ExceptionHandlerController {
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<ErrorResponse> handleException(RuntimeException e) {
         ErrorResponse error = ErrorResponse.builder(e, HttpStatus.BAD_REQUEST, e.getMessage()).build();
-        return ResponseEntity.badRequest().body(error);
+        return ResponseEntity.internalServerError().body(error);
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)

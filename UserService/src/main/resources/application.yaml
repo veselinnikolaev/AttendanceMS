@@ -10,7 +10,7 @@ spring:
     vault:
       uri: http://127.0.0.1:8200
       authentication: TOKEN
-      token:
+      token: hvs.gYf2BKuupqVgQS1ItdRafoUw
       kv:
         enabled: true
         backend: secret

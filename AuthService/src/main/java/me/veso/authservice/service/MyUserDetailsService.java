@@ -1,5 +1,6 @@
 package me.veso.authservice.service;
 
+import lombok.RequiredArgsConstructor;
 import me.veso.authservice.dto.UserDetailsDto;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.User;
@@ -9,13 +10,13 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
-import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @Service
+@RequiredArgsConstructor
 public class MyUserDetailsService implements UserDetailsService {
-    private RestTemplate client;
+    private final RestTemplate client;
     private final String userServiceUrl = "http://UserService/users";
 
     @Override

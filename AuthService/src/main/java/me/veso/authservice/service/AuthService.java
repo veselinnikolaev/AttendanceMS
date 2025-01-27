@@ -1,21 +1,47 @@
 package me.veso.authservice.service;
 
 import lombok.RequiredArgsConstructor;
+import me.veso.authservice.dto.RoleResponse;
+import me.veso.authservice.dto.UserLoginDto;
+import me.veso.authservice.dto.UserLoginResponse;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
 
 @Service
 @RequiredArgsConstructor
 public class AuthService {
-    private RestTemplate client;
-    private JwtService jwtService;
+    private final JwtService jwtService;
+    private final UserDetailsService userDetailsService;
+    private final AuthenticationManager authenticationManager;
 
-    public String generateToken(String username){
-        return jwtService.generateToken(username);
+    public boolean validateToken(String token, UserDetails userDetails){
+        return jwtService.validateToken(token, userDetails);
     }
 
-    public void validateToken(String token, UserDetails userDetails){
-        jwtService.validateToken(token, userDetails);
+    public String getRole(UserDetails userDetails){
+        return userDetails.getAuthorities()
+                .stream()
+                .map(GrantedAuthority::getAuthority)
+                .findFirst()
+                .orElse(null);
+    }
+
+    public UserLoginResponse login(UserLoginDto userLoginDto) {
+        Authentication authentication  = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(
+                userLoginDto.getUsername(),
+                userLoginDto.getPassword()
+        ));
+
+        String accessToken = jwtService.generateToken(authentication.getName());
+        return new UserLoginResponse(accessToken);
+    }
+
+    public RoleResponse getRoleByUsername(String username) {
+        return new RoleResponse(username, getRole(userDetailsService.loadUserByUsername(username)));
     }
 }

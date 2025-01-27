@@ -1,6 +1,6 @@
 spring:
   application:
-    name: AuthService
+    name: AUTH_SERVICE
 
 eureka:
    client:
@@ -9,3 +9,7 @@ eureka:
 
 server:
   port: 0
+
+free:
+  resources:
+      /eureka, /auth/*
