@@ -27,7 +27,7 @@ public class SecurityConfig {
     private final JwtFilter jwtFilter;
     @Value("${free.resources}")
     private String[] freeResourceUrls;
-    private RestTemplate restTemplate;
+    private final RestTemplate restTemplate;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity) throws Exception {
