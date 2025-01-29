@@ -7,7 +7,6 @@ import me.veso.authservice.dto.UserLoginDto;
 import me.veso.authservice.service.AuthService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
@@ -31,6 +30,16 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody UserLoginDto userLoginDto){
         return ResponseEntity.ok(service.login(userLoginDto));
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<String> logout(@RequestHeader("Authorization") String authHeader) {
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            String token = authHeader.substring(7);
+            long expiration = service.getTokenExpirationInSeconds(token);
+            service.blacklistToken(token, expiration);
+        }
+        return ResponseEntity.ok("Logged out successfully");
     }
 
     @GetMapping("/roles/{username}")

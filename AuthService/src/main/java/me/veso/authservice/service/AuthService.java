@@ -18,9 +18,18 @@ public class AuthService {
     private final JwtService jwtService;
     private final UserDetailsService userDetailsService;
     private final AuthenticationManager authenticationManager;
+    private final TokenBlacklistService tokenBlackListService;
 
     public boolean validateToken(String token, UserDetails userDetails){
         return jwtService.validateToken(token, userDetails);
+    }
+
+    public long getTokenExpirationInSeconds(String token){
+        return jwtService.extractExpiration(token).getTime()/1000;
+    }
+
+    public void blacklistToken(String token, long expirationInSeconds){
+        tokenBlackListService.blacklistToken(token, expirationInSeconds);
     }
 
     public String getRole(UserDetails userDetails){

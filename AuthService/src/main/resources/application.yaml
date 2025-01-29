@@ -1,6 +1,8 @@
 spring:
   application:
     name: AUTH_SERVICE
+  redis:
+
 
 eureka:
    client:
@@ -10,6 +12,32 @@ eureka:
 server:
   port: 0
 
-free:
-  resources:
-      /eureka, /auth/*
+free-resources:
+  urls:
+    - "/auth/login"
+    - "lb://USER_SERVICE/users/register"
+    - "lb://SERVICE_REGISTRY/eureka"
+
+authenticated-resources:
+  urls:
+    - "lb://USER_SERVICE/users/**"
+    - "lb://CATEGORY_SERVICE/categories/**"
+    - "lb://ATTENDANCE_SERVICE/attendance/**"
+
+admin-resources:
+  urls:
+    - "lb://USER_SERVICE/users/**"
+    - "lb://CATEGORY_SERVICE/categories/**"
+    - "lb://ATTENDANCE_SERVICE/attendance/**"
+    - "/auth/**"
+
+checker-resources:
+  urls:
+    - "lb://CATEGORY_SERVICE/categories/*/assign"
+    - "lb://ATTENDANCE_SERVICE/attendance/user/{userId}"
+    - "lb://ATTENDANCE_SERVICE/attendance/category/{categoryId}"
+
+attendant-resources:
+  urls:
+    - "lb://ATTENDANCE_SERVICE/attendance/user/{userId}"
+    - "lb://ATTENDANCE_SERVICE/attendance/category/{categoryId}"

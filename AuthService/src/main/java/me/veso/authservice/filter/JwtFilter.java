@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import me.veso.authservice.AuthServiceApplication;
 import me.veso.authservice.service.JwtService;
 import me.veso.authservice.service.MyUserDetailsService;
+import me.veso.authservice.service.TokenBlacklistService;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -20,6 +21,7 @@ import java.io.IOException;
 @Component
 @RequiredArgsConstructor
 public class JwtFilter extends OncePerRequestFilter {
+    private final TokenBlacklistService tokenBlacklistService;
     private final JwtService jwtService;
 
     @Override
@@ -31,6 +33,12 @@ public class JwtFilter extends OncePerRequestFilter {
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             token = authHeader.substring(7);
             username = jwtService.extractUserName(token);
+        }
+
+        if (token != null && tokenBlacklistService.isTokenBlacklisted(token)) {
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.getWriter().write("Token is blacklisted");
+            return;
         }
 
         if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {

@@ -12,6 +12,7 @@ import org.springframework.security.authentication.dao.DaoAuthenticationProvider
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -25,20 +26,38 @@ import org.springframework.web.client.RestTemplate;
 @RequiredArgsConstructor
 public class SecurityConfig {
     private final JwtFilter jwtFilter;
-    @Value("${free.resources}")
-    private String[] freeResourceUrls;
     private final RestTemplate restTemplate;
+    @Value("${free-resources.urls}")
+    private String[] freeResourceUrls;
+
+    @Value("${authenticated-resources.urls}")
+    private String[] authenticatedResourceUrls;
+
+    @Value("${admin-resources.urls}")
+    private String[] adminResourceUrls;
+
+    @Value("${checker-resources.urls}")
+    private String[] checkerResourceUrls;
+
+    @Value("${attendant-resources.urls}")
+    private String[] attendantResourceUrls;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity) throws Exception {
-        return httpSecurity.authorizeHttpRequests(authorize -> authorize
-                .requestMatchers(freeResourceUrls)
-                .permitAll()
-                .anyRequest().authenticated())
+        return httpSecurity
+                .csrf(AbstractHttpConfigurer::disable)
+                .authorizeHttpRequests(authorize -> authorize
+                        .requestMatchers(freeResourceUrls).permitAll()
+                        .requestMatchers(adminResourceUrls).hasRole("admin")
+                        .requestMatchers(checkerResourceUrls).hasRole("checker")
+                        .requestMatchers(attendantResourceUrls).hasRole("attendant")
+                        .requestMatchers(authenticatedResourceUrls).authenticated()
+                        .anyRequest().denyAll())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();
     }
+
 
     @Bean
     public PasswordEncoder encoder() {
