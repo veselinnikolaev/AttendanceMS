@@ -20,8 +20,16 @@ public class AuthService {
     private final AuthenticationManager authenticationManager;
     private final TokenBlacklistService tokenBlackListService;
 
-    public boolean validateToken(String token, UserDetails userDetails){
-        return jwtService.validateToken(token, userDetails);
+    public boolean validateToken(String token){
+        return jwtService.validateToken(token);
+    }
+
+    public String extractUsernameFromToken(String token){
+        return jwtService.extractUsername(token);
+    }
+
+    public String extractRoleFromToken(String token){
+        return jwtService.extractRole(token);
     }
 
     public long getTokenExpirationInSeconds(String token){
@@ -30,6 +38,10 @@ public class AuthService {
 
     public void blacklistToken(String token, long expirationInSeconds){
         tokenBlackListService.blacklistToken(token, expirationInSeconds);
+    }
+
+    public boolean isTokenBlacklisted(String token){
+        return tokenBlackListService.isTokenBlacklisted(token);
     }
 
     public String getRole(UserDetails userDetails){
@@ -46,7 +58,7 @@ public class AuthService {
                 userLoginDto.getPassword()
         ));
 
-        String accessToken = jwtService.generateToken(authentication.getName());
+        String accessToken = jwtService.generateToken(authentication.getName(), authentication.getAuthorities());
         return new UserLoginResponse(accessToken);
     }
 

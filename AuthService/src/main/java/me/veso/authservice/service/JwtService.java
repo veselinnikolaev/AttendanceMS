@@ -3,8 +3,7 @@ package me.veso.authservice.service;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
-import lombok.RequiredArgsConstructor;
-import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.stereotype.Service;
 import io.jsonwebtoken.Claims;
 
@@ -13,6 +12,7 @@ import javax.crypto.SecretKey;
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 public class JwtService {
@@ -31,8 +31,14 @@ public class JwtService {
         }
     }
 
-    public String generateToken(String username) {
+    public String generateToken(String username, Collection<? extends GrantedAuthority> authorities) {
         Map<String, Object> claims = new HashMap<>();
+
+        String role = authorities.stream()
+                .map(GrantedAuthority::getAuthority)
+                .findFirst().orElseThrow(() -> new RuntimeException("No role provided for user with username " + username));
+        claims.put("role", role);
+
         return Jwts.builder()
                 .setClaims(claims)
                 .setSubject(username)
@@ -47,19 +53,21 @@ public class JwtService {
         return Keys.hmacShaKeyFor(keyBytes);
     }
 
-    public String extractUserName(String token) {
-        return extractClaim(token, Claims::getSubject);
+    public boolean validateToken(String token) {
+        return !isTokenExpired(token)
+                && !tokenBlacklistService.isTokenBlacklisted(token);
     }
 
-    public boolean validateToken(String token, UserDetails userDetails) {
-        final String username = extractUserName(token);
-        return (username.equals(userDetails.getUsername())
-                && !isTokenExpired(token)
-                && !tokenBlacklistService.isTokenBlacklisted(token)); // 🔥 Add blacklist check
+    public String extractUsername(String token) {
+        return extractClaim(token, Claims::getSubject);
     }
 
     public Date extractExpiration(String token) {
         return extractClaim(token, Claims::getExpiration);
+    }
+
+    public String extractRole(String token) {
+        return extractClaim(token, claims -> claims.get("role", String.class));
     }
 
     private <T> T extractClaim(String token, Function<Claims, T> claimResolver) {
