@@ -8,7 +8,7 @@ spring:
             predicates:
               - Path=/auth/**
             filters:
-              - AuthenticationFilter
+              - JwtFilter
 
           - id: attendance-service
             uri: lb://ATTENDANCE_SERVICE
@@ -46,31 +46,7 @@ eureka:
 
 free-resources:
   urls:
-    - "/auth/login"
-    - "/users/register"
-    - "/eureka/**"
-
-authenticated-resources:
-  urls:
-    - "/users/**"
-    - "/categories/**"
-    - "/attendance/**"
-
-admin-resources:
-  urls:
-    - "/users/**"
-    - "/categories/**"
-    - "/attendance/**"
-    - "/auth/**"
-
-checker-resources:
-  urls:
-    - "/categories/*/assign"
-    - "/attendance/user/{userId}"
-    - "/attendance/category/{categoryId}"
-
-attendant-resources:
-  urls:
-    - "/attendance/user/{userId}"
-    - "/attendance/category/{categoryId}"
+    - "lb://AUTH_SERVICE/auth/login"
+    - "lb://USER_SERVICE/users/register"
+    - "lb://SERVICE_REGISTRY/eureka/**"
 

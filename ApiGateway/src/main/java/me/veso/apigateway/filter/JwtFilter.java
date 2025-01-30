@@ -1,11 +1,9 @@
 package me.veso.apigateway.filter;
 
 import jakarta.servlet.FilterChain;
-import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import me.veso.apigateway.dto.TokenResponse;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
@@ -20,14 +18,12 @@ import org.springframework.web.util.UriComponentsBuilder;
 import java.io.IOException;
 import java.util.List;
 
-@Slf4j
 @Component
 @RequiredArgsConstructor
 public class JwtFilter extends OncePerRequestFilter {
     private final RestTemplate restTemplate;
 
-    @Value("${auth.service.url}")
-    private String authServiceUrl;
+    private final String authServiceUrl = "http://AUTH_SERVICE/auth";
 
     @Value("${jwt.public-urls}")
     private List<String> freeResourceUrls;
@@ -39,11 +35,7 @@ public class JwtFilter extends OncePerRequestFilter {
     }
 
     @Override
-    protected void doFilterInternal(
-            HttpServletRequest request,
-            HttpServletResponse response,
-            FilterChain filterChain
-    ) throws IOException {
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws IOException {
         try {
             String token = extractToken(request);
             validateTokenAndCheckBlacklist(token);
@@ -51,7 +43,6 @@ public class JwtFilter extends OncePerRequestFilter {
         } catch (RuntimeException e) {
             handleAuthenticationError(response, e.getMessage(), HttpStatus.UNAUTHORIZED);
         } catch (Exception e) {
-            log.error("Error processing JWT token", e);
             handleAuthenticationError(response, "Internal server error", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
@@ -78,7 +69,6 @@ public class JwtFilter extends OncePerRequestFilter {
                 throw new RuntimeException("Invalid JWT token");
             }
         } catch (HttpClientErrorException e) {
-            log.error("Error communicating with auth service", e);
             throw new RuntimeException("Error validating token");
         }
     }
@@ -105,11 +95,7 @@ public class JwtFilter extends OncePerRequestFilter {
         return restTemplate.getForEntity(url, Boolean.class);
     }
 
-    private void handleAuthenticationError(
-            HttpServletResponse response,
-            String message,
-            HttpStatus status
-    ) throws IOException {
+    private void handleAuthenticationError(HttpServletResponse response, String message, HttpStatus status) throws IOException {
         response.setStatus(status.value());
         response.setContentType("application/json");
         response.getWriter().write(String.format("{\"error\": \"%s\"}", message));

@@ -17,7 +17,7 @@ import java.util.stream.Stream;
 @RequiredArgsConstructor
 public class MyUserDetailsService implements UserDetailsService {
     private final RestTemplate client;
-    private final String userServiceUrl = "http://UserService/users";
+    private final String userServiceUrl = "http://USER_SERVICE/users";
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
