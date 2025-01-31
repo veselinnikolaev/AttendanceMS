@@ -47,10 +47,4 @@ public class AuthController {
     public ResponseEntity<Boolean> isBlacklisted(@RequestParam @NotBlank(message = "Token param is required") String token) {
         return ResponseEntity.ok(service.isTokenBlacklisted(token));
     }
-
-    @GetMapping("/roles/{username}")
-    @Validated
-    public ResponseEntity<?> getRolesForUserByUsername(@PathVariable @NotBlank(message = "Username is required") String username){
-        return ResponseEntity.ok(service.getRoleByUsername(username));
-    }
 }

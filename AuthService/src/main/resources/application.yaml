@@ -1,8 +1,6 @@
 spring:
   application:
     name: AUTH_SERVICE
-  redis:
-
 
 eureka:
    client:

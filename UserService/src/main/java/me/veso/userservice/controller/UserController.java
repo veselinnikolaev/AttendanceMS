@@ -34,6 +34,7 @@ public class UserController {
     public ResponseEntity<UserStatusDto> updateStatus(
             @Positive(message = "User id must be positive") @PathVariable("id") Long id,
             @Pattern(regexp = "^(approved|denied)$", message = "Status must be either approved or denied") @PathVariable("status") String status) {
+        //TODO: Notify for status update
         return ResponseEntity.ok(userService.validateRegistration(id, status));
     }
 

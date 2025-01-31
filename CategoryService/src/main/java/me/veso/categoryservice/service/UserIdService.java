@@ -13,22 +13,16 @@ public class UserIdService {
     private final UserIdRepository userIdRepository;
 
     public UserId saveIdLongIfNotExists(Long id) {
-        List<Long> userIds = userIdRepository.findAll().stream().map(UserId::getUserId).toList();
-        if(userIds.contains(id)) {
-            return userIdRepository.findByUserId(id).orElseThrow(() -> new RuntimeException("User not found"));
-        }
-        UserId userId = new UserId().setUserId(id);
-        return userIdRepository.save(userId);
+        //TODO: is user approved
+        return userIdRepository.findByUserId(id)
+                .orElseGet(() -> userIdRepository.save(new UserId().setUserId(id)));
     }
 
     public List<UserId> saveIdsLongIfNotExist(List<Long> ids) {
-        List<Long> userIds = userIdRepository.findAll().stream().map(UserId::getUserId).toList();
-        List<UserId> userIdsMapped = ids.stream().map(id -> new UserId().setUserId(id)).toList();
-
-        List<UserId> userIdsToSave = userIdsMapped.stream()
-                .filter(id -> !userIds.contains(id.getUserId()))
+        //TODO: are users approved
+        return ids.stream()
+                .map(id -> userIdRepository.findByUserId(id)
+                        .orElseGet(() -> userIdRepository.save(new UserId().setUserId(id))))
                 .toList();
-        userIdRepository.saveAll(userIdsToSave);
-        return userIdsMapped;
     }
 }

@@ -13,11 +13,7 @@ public class CategoryIdService  {
     private final CategoryIdRepository categoryIdRepository;
 
     public CategoryId saveIdLongIfNotExists(Long id) {
-        List<Long> categoryIds = categoryIdRepository.findAll().stream().map(CategoryId::getCategoryId).toList();
-        if(categoryIds.contains(id)) {
-            return categoryIdRepository.findByCategoryId(id).orElseThrow(() -> new RuntimeException("Category not found"));
-        }
-        CategoryId categoryId = new CategoryId().setCategoryId(id);
-        return categoryIdRepository.save(categoryId);
+        return categoryIdRepository.findByCategoryId(id)
+                .orElseGet(() -> categoryIdRepository.save(new CategoryId().setCategoryId(id)));
     }
 }

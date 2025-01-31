@@ -22,6 +22,8 @@ public class CategoryController {
 
     @PostMapping
     public ResponseEntity<CategoryDetailsDto> createCategory(@Valid @RequestBody CategoryCreationDto categoryCreationDto) {
+        //TODO: Maybe do not include users in the dto, because there is endpoint for assigning users
+        //TODO: Notify assigned users for this category
         return ResponseEntity.status(HttpStatus.CREATED).body(categoryService.createCategory(categoryCreationDto));
     }
 
@@ -45,6 +47,7 @@ public class CategoryController {
     public ResponseEntity<CategoryDetailsDto> assignAttendantsToCategory(
             @NotBlank(message = "Category id is required") @PathVariable("id") String id,
             @Valid @RequestBody List<Long> attendantsIds) {
+        //TODO: Notify assigned users for this category
         return ResponseEntity.ok(categoryService.assignAttendantsToCategory(id, attendantsIds));
     }
 

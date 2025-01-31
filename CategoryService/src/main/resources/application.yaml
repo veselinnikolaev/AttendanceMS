@@ -18,6 +18,9 @@ spring:
   data:
     mongodb:
       uri: ${mongo.uri}
+  rabbitmq:
+    password: secret
+    username: myuser
 
 eureka:
   client:

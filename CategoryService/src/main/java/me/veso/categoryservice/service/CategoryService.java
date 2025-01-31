@@ -7,6 +7,7 @@ import me.veso.categoryservice.dto.CategoryUpdateDto;
 import me.veso.categoryservice.entity.Category;
 import me.veso.categoryservice.repository.CategoryRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -39,6 +40,7 @@ public class CategoryService {
         categoryRepository.deleteById(id);
     }
 
+    @Transactional
     public CategoryDetailsDto assignAttendantsToCategory(String id, List<Long> attendantsIds) {
         Category category = categoryRepository.findById(id).orElseThrow(() -> new RuntimeException("Category not found"));
         category.addAttendants(userIdService.saveIdsLongIfNotExist(attendantsIds));

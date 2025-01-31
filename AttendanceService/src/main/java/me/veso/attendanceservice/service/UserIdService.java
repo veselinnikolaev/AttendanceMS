@@ -13,11 +13,8 @@ public class UserIdService {
     private final UserIdRepository userIdRepository;
 
     public UserId saveIdLongIfNotExists(Long id) {
-        List<Long> userIds = userIdRepository.findAll().stream().map(UserId::getUserId).toList();
-        if(userIds.contains(id)) {
-            return userIdRepository.findByUserId(id).orElseThrow(() -> new RuntimeException("User not found"));
-        }
-        UserId userId = new UserId().setUserId(id);
-        return userIdRepository.save(userId);
+        //TODO: is user approved
+        return userIdRepository.findByUserId(id)
+                .orElseGet(() -> userIdRepository.save(new UserId().setUserId(id)));
     }
 }

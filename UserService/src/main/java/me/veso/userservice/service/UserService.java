@@ -25,13 +25,10 @@ public class UserService {
             throw new RuntimeException("Passwords do not match");
         }
 
-        List<User> users = userRepository.findAll();
-        if (users
-                .stream().anyMatch(user -> user.getUsername().equals(userRegisterDto.getUsername()))) {
+        if (userRepository.existsByUsername(userRegisterDto.getUsername())) {
             throw new RuntimeException("Username already exists");
         }
-        if (users.stream()
-                .anyMatch(user -> user.getEmail().equals(userRegisterDto.getEmail()))) {
+        if (userRepository.existsByEmail(userRegisterDto.getEmail())) {
             throw new RuntimeException("Email already exists");
         }
 
@@ -60,7 +57,7 @@ public class UserService {
 
     public UserDetailsDto getUser(Long id) {
         return new UserDetailsDto(userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("User with id " + id + " found")));
+                .orElseThrow(() -> new RuntimeException("User with id " + id + " not found")));
     }
 
     public List<UserDetailsDto> getAllUsersByStatus(String status) {
