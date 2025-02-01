@@ -9,7 +9,7 @@ import java.util.List;
 
 @Repository
 public interface AttendanceRepository extends JpaRepository<Attendance, Long> {
-    List<Attendance> findAllByCategory_CategoryId(Long categoryId);
+    List<Attendance> findAllByCategory_CategoryId(String categoryId);
 
     List<Attendance> findAllByUser_UserId(Long userId);
 }

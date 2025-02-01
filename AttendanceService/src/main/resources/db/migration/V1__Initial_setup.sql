@@ -7,7 +7,7 @@ CREATE TABLE users
 CREATE TABLE categories
 (
     id          BIGINT AUTO_INCREMENT PRIMARY KEY,
-    category_id BIGINT NOT NULL
+    category_id VARCHAR(255) NOT NULL
 );
 
 CREATE TABLE attendance
@@ -18,6 +18,6 @@ CREATE TABLE attendance
     created_at  DATETIME     NOT NULL,
     user_id     BIGINT       NOT NULL,
     category_id BIGINT       NOT NULL,
-    CONSTRAINT fk_user FOREIGN KEY (user_id) REFERENCES user_id (id),
-    CONSTRAINT fk_category FOREIGN KEY (category_id) REFERENCES category_id (id)
+    CONSTRAINT fk_user FOREIGN KEY (user_id) REFERENCES users (id),
+    CONSTRAINT fk_category FOREIGN KEY (category_id) REFERENCES categories (id)
 );

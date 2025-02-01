@@ -72,4 +72,17 @@ public class UserService {
                 .findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("User with username " + username + " not found")));
     }
+
+    public String getStatusById(Long id) {
+        return userRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("User with id " + id + " not found"))
+                .getStatus();
+    }
+
+    public List<String> getStatusesByIds(List<Long> ids) {
+        return userRepository.findAllByIdIn(ids)
+                .stream()
+                .map(User::getStatus)
+                .collect(Collectors.toList());
+    }
 }

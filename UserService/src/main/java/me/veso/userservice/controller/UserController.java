@@ -63,4 +63,16 @@ public class UserController {
             @NotBlank(message = "Username must not be blank") @PathVariable("username") String username) {
         return ResponseEntity.ok(userService.getUserByUsername(username));
     }
+
+    @GetMapping("/{id}/status")
+    @Validated
+    public ResponseEntity<String> getStatusById(@Positive(message = "User id must be positive") @PathVariable("id") Long id){
+      return ResponseEntity.ok(userService.getStatusById(id));
+    }
+
+    @PostMapping("/status")
+    @Validated
+    public ResponseEntity<List<String>> getStatusesByIds(@RequestBody List<@Positive(message = "User id must be positive") Long> ids){
+        return ResponseEntity.ok(userService.getStatusesByIds(ids));
+    }
 }

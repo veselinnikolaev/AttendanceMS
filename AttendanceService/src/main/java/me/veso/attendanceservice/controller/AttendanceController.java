@@ -1,6 +1,7 @@
 package me.veso.attendanceservice.controller;
 
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
 import me.veso.attendanceservice.dto.AttendanceCreationDto;
@@ -27,13 +28,15 @@ public class AttendanceController {
 
     @GetMapping("/category/{categoryId}")
     @Validated
-    public ResponseEntity<List<AttendanceDetailsDto>> getAttendance(@Positive(message = "Category id must be positive") @PathVariable Long categoryId) {
+    public ResponseEntity<List<AttendanceDetailsDto>> getAttendance(
+            @NotBlank(message = "Category id is required") @PathVariable("categoryId") String categoryId) {
         return ResponseEntity.ok(attendanceService.getAttendanceForCategory(categoryId));
     }
 
     @GetMapping("/user/{userId}")
     @Validated
-    public ResponseEntity<List<AttendanceDetailsDto>> getAttendanceForUser(@Positive(message = "User id must be positive") @PathVariable Long userId) {
+    public ResponseEntity<List<AttendanceDetailsDto>> getAttendanceForUser(
+            @Positive(message = "User id must be positive") @PathVariable("userId") Long userId) {
         return ResponseEntity.ok(attendanceService.getAttendanceForUser(userId));
     }
 }

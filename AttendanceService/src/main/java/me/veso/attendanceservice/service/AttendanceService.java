@@ -25,7 +25,7 @@ public class AttendanceService {
         return new AttendanceDetailsDto(attendanceRepository.save(attendance));
     }
 
-    public List<AttendanceDetailsDto> getAttendanceForCategory(Long categoryId) {
+    public List<AttendanceDetailsDto> getAttendanceForCategory(String categoryId) {
         return attendanceRepository.findAllByCategory_CategoryId(categoryId).stream().map(AttendanceDetailsDto::new).toList();
     }
 

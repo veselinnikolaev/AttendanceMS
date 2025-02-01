@@ -14,7 +14,6 @@ public class AttendanceCreationDto {
     @Positive(message = "User ID must be positive number")
     @NotNull(message = "User ID is required")
     private Long userId;
-    @Positive(message = "Category ID must be positive number")
-    @NotNull(message = "Category ID is required")
-    private Long categoryId;
+    @NotBlank(message = "Category ID is required")
+    private String categoryId;
 }

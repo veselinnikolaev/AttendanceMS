@@ -12,7 +12,7 @@ public class AttendanceDetailsDto {
     private Long id;
     private String status;
     private Long userId;
-    private Long categoryId;
+    private String categoryId;
     private LocalDateTime createdAt;
 
     public AttendanceDetailsDto(Attendance attendance) {

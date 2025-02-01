@@ -10,9 +10,9 @@ import lombok.Getter;
 @Table(name = "categories")
 public class CategoryId extends ObjectWithId {
     @Column(name = "category_id", nullable = false)
-    private Long categoryId;
+    private String categoryId;
 
-    public CategoryId setCategoryId(Long id) {
+    public CategoryId setCategoryId(String id) {
         this.categoryId = id;
         return this;
     }

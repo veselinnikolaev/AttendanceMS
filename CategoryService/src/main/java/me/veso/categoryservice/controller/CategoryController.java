@@ -22,7 +22,6 @@ public class CategoryController {
 
     @PostMapping
     public ResponseEntity<CategoryDetailsDto> createCategory(@Valid @RequestBody CategoryCreationDto categoryCreationDto) {
-        //TODO: Maybe do not include users in the dto, because there is endpoint for assigning users
         //TODO: Notify assigned users for this category
         return ResponseEntity.status(HttpStatus.CREATED).body(categoryService.createCategory(categoryCreationDto));
     }
