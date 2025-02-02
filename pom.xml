@@ -20,6 +20,7 @@
     <module>AttendanceService</module>
     <module>ApiGateway</module>
     <module>AuthService</module>
+    <module>NotificationService</module>
   </modules>
   <properties>
     <java.version>23</java.version>

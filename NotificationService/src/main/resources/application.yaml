@@ -1,9 +1,6 @@
-server:
-  port: 0
-
 spring:
   application:
-    name: CATEGORY_SERVICE
+    name: NOTIFICATION_SERVICE
   config:
     import: vault://
   cloud:
@@ -14,10 +11,12 @@ spring:
       kv:
         enabled: true
         backend: secret
-        default-context: database
-  data:
-    mongodb:
-      uri: ${mongo.uri}
+        default-context: mail
+  mail:
+    host: live.smtp.mailtrap.io
+    port: 587
+    username: ${mail.username}
+    password: ${mail.password}
   rabbitmq:
     username: myuser
     password: secret

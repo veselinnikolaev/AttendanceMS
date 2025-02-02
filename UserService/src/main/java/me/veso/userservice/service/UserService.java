@@ -2,11 +2,13 @@ package me.veso.userservice.service;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import me.veso.userservice.config.MessageQueueConfig;
 import me.veso.userservice.dto.UserDetailsDto;
 import me.veso.userservice.dto.UserRegisterDto;
 import me.veso.userservice.dto.UserStatusDto;
 import me.veso.userservice.entity.User;
 import me.veso.userservice.repository.UserRepository;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -19,6 +21,7 @@ import java.util.stream.Collectors;
 public class UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder encoder;
+    private final RabbitTemplate rabbitTemplate;
 
     public UserDetailsDto register(UserRegisterDto userRegisterDto) {
         if (!userRegisterDto.getPassword().equals(userRegisterDto.getConfirmPassword())) {
@@ -45,7 +48,12 @@ public class UserService {
     @Transactional
     public UserStatusDto validateRegistration(Long id, String status) {
         userRepository.updateStatus(id, status, LocalDateTime.now());
-        return new UserStatusDto(id, status);
+
+        UserStatusDto userStatusDto = new UserStatusDto(id, status);
+
+        rabbitTemplate.convertAndSend(MessageQueueConfig.EXCHANGE_NAME, "user.status.updated", userStatusDto);
+
+        return userStatusDto;
     }
 
     public List<UserDetailsDto> getAllUsers() {
