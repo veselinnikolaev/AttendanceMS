@@ -22,7 +22,6 @@ public class AttendanceController {
 
     @PostMapping
     public ResponseEntity<AttendanceDetailsDto> createAttendance(@Valid @RequestBody AttendanceCreationDto attendanceCreationDto) {
-        //TODO: Notify for new attendance
         return ResponseEntity.status(HttpStatus.CREATED).body(attendanceService.createAttendance(attendanceCreationDto));
     }
 

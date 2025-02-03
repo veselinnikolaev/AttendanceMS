@@ -10,5 +10,10 @@ import lombok.Getter;
 @Table(name = "categories")
 public class CategoryId extends ObjectWithId {
     @Column(name = "category_id", nullable = false)
-    private Long categoryId;
+    private String categoryId;
+
+    public CategoryId setCategoryId(String categoryId){
+        this.categoryId = categoryId;
+        return this;
+    }
 }

@@ -1,6 +1,5 @@
 package me.veso.userservice.repository;
 
-import me.veso.userservice.dto.UserDetailsDto;
 import me.veso.userservice.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
@@ -27,4 +26,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
     Optional<User> findByUsername(String username);
 
     List<User> findAllByIdIn(List<Long> ids);
+
+    @Query("SELECT u FROM User u JOIN u.categories c WHERE c.categoryId = :categoryId")
+    List<User> findAllByCategoryId(@Param("categoryId") String categoryId);
 }

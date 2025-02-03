@@ -9,8 +9,8 @@ import org.springframework.context.annotation.Configuration;
 
 @Configuration
 public class MessageQueueConfig {
-    public static final String EXCHANGE_NAME = "user_exchange";
-    public static final String QUEUE_NAME = "user_queue";
+    public static final String EXCHANGE_NAME = "user.direct";
+    public static final String QUEUE_NAME = "status.updated.queue";
 
     @Bean
     public Queue queue(){

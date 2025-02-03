@@ -53,4 +53,14 @@ public class User extends ObjectWithId {
         this.status = status;
         return this;
     }
+
+    public User addCategory(CategoryId categoryId){
+        this.categories.add(categoryId);
+        return this;
+    }
+
+    public User removeCategory(CategoryId categoryId){
+        this.categories.remove(categoryId);
+        return this;
+    }
 }

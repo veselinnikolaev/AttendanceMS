@@ -20,7 +20,7 @@ public class UserDetailsDto {
     private String status;
     private LocalDateTime createdAt;
     private LocalDateTime processedAt;
-    private List<Long> categories;
+    private List<String> categories;
 
     public UserDetailsDto(User user) {
         this.id = user.getId();

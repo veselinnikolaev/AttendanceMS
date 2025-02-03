@@ -34,7 +34,6 @@ public class UserController {
     public ResponseEntity<UserStatusDto> updateStatus(
             @Positive(message = "User id must be positive") @PathVariable("id") Long id,
             @Pattern(regexp = "^(approved|denied)$", message = "Status must be either approved or denied") @PathVariable("status") String status) {
-        //TODO: Notify for status update
         return ResponseEntity.ok(userService.validateRegistration(id, status));
     }
 
@@ -48,6 +47,12 @@ public class UserController {
                 ? userService.getAllUsers()
                 : userService.getAllUsersByStatus(status);
         return ResponseEntity.ok(users);
+    }
+
+    @PostMapping
+    @Validated
+    public ResponseEntity<List<UserDetailsDto>> getUsersByIds(@RequestBody List<@Positive(message = "User id must be positive") Long> ids){
+        return ResponseEntity.ok(userService.getUsersByIds(ids));
     }
 
     @GetMapping("/{id}")

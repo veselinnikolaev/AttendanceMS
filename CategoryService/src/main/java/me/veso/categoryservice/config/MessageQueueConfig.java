@@ -9,13 +9,10 @@ import org.springframework.context.annotation.Configuration;
 
 @Configuration
 public class MessageQueueConfig {
-    public static final String EXCHANGE_NAME = "category_exchange";
-    public static final String QUEUE_NAME = "assigning_queue";
+    public static final String EXCHANGE_NAME = "categories.direct";
 
-    @Bean
-    public Queue queue(){
-        return new Queue(QUEUE_NAME, false);
-    }
+    public static final String ASSIGNING_QUEUE_NAME = "users.assigning.queue";
+    public static final String DELETION_QUEUE_NAME = "category.deleted.queue";
 
     @Bean
     public DirectExchange exchange(){
@@ -23,7 +20,22 @@ public class MessageQueueConfig {
     }
 
     @Bean
-    public Binding binding(Queue queue, DirectExchange exchange) {
-        return BindingBuilder.bind(queue).to(exchange).with("users.assigned");
+    public Queue assigningQueue(){
+        return new Queue(ASSIGNING_QUEUE_NAME, false);
+    }
+
+    @Bean
+    public Queue deletionQueue(){
+        return new Queue(DELETION_QUEUE_NAME, false);
+    }
+
+    @Bean
+    public Binding assingingBinding(Queue assigningQueue, DirectExchange exchange) {
+        return BindingBuilder.bind(assigningQueue).to(exchange).with("users.assigned");
+    }
+
+    @Bean
+    public Binding deletionBinding(Queue deletionQueue, DirectExchange exchange) {
+        return BindingBuilder.bind(deletionQueue).to(exchange).with("category.deleted");
     }
 }

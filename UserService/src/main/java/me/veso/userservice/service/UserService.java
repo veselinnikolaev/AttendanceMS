@@ -93,4 +93,23 @@ public class UserService {
                 .map(User::getStatus)
                 .collect(Collectors.toList());
     }
+
+    public List<UserDetailsDto> getUsersByIds(List<Long> ids) {
+        return userRepository.findAllByIdIn(ids)
+                .stream()
+                .map(UserDetailsDto::new)
+                .collect(Collectors.toList());
+    }
+
+    public List<User> findAllByIdIn(List<Long> userIds) {
+        return userRepository.findAllByIdIn(userIds);
+    }
+
+    public void saveAll(List<User> users) {
+        userRepository.saveAll(users);
+    }
+
+    public List<User> findAllByCategoryId(String id) {
+        return userRepository.findAllByCategoryId(id);
+    }
 }
