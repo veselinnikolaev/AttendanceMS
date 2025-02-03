@@ -1,21 +1,16 @@
 package me.veso.notificationservice.dto;
 
-import lombok.Getter;
-import lombok.Setter;
-
 import java.time.LocalDateTime;
 import java.util.List;
 
-@Getter
-@Setter
-public class UserDetailsDto {
-    private Long id;
-    private String username;
-    private String email;
-    private String passwordHash;
-    private String role;
-    private String status;
-    private LocalDateTime createdAt;
-    private LocalDateTime processedAt;
-    private List<String> categories;
-}
+public record UserDetailsDto (
+    Long id,
+    String username,
+    String email,
+    String passwordHash,
+    String role,
+    String status,
+    LocalDateTime createdAt,
+    LocalDateTime processedAt,
+    List<String> categories
+) {}

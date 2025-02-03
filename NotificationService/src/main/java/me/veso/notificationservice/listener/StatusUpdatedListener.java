@@ -19,13 +19,13 @@ public class StatusUpdatedListener {
 
     @RabbitHandler
     public void handleStatusUpdated(UserStatusDto userStatusDto){
-        UserDetailsDto user = client.getForEntity(userServiceUrl + "/{id}", UserDetailsDto.class, userStatusDto.getId()).getBody();
+        UserDetailsDto user = client.getForEntity(userServiceUrl + "/{id}", UserDetailsDto.class, userStatusDto.id()).getBody();
 
-        mailService.send(user.getEmail(), "Status Updated",
+        mailService.send(user.email(), "Status Updated",
                 """
                 Hi %s,
                 Your account status has been updated!
                 Current status: %s.
-                """.formatted(user.getUsername(), userStatusDto.getStatus()));
+                """.formatted(user.username(), userStatusDto.status()));
     }
 }

@@ -12,6 +12,8 @@ import org.springframework.stereotype.Component;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Component
 @RabbitListener(queues = "users.assigning.queue")
@@ -22,12 +24,16 @@ public class UserAssignedListener {
 
     @RabbitHandler
     public void handleAssigned(Map<String, Object> payload){
-        List<Long> userIds = Arrays.asList((Long[]) payload.get("userIds"));
+        Long checkerId = (Long) payload.get("checkerId");
+        List<Long> attendantsIds = Arrays.asList((Long[]) payload.get("attendantsIds"));
         String categoryId = (String) payload.get("categoryId");
 
         CategoryId category = categoryService.saveIfNotExists(categoryId);
 
-        List<User> users = userService.findAllByIdIn(userIds);
+        List<Long> usersIds = Stream
+                .concat(Stream.of(checkerId), attendantsIds.stream())
+                .collect(Collectors.toList());
+        List<User> users = userService.findAllByIdIn(usersIds);
 
         users.forEach(u -> u.addCategory(category));
 

@@ -24,22 +24,22 @@ public class UserService {
     private final RabbitTemplate rabbitTemplate;
 
     public UserDetailsDto register(UserRegisterDto userRegisterDto) {
-        if (!userRegisterDto.getPassword().equals(userRegisterDto.getConfirmPassword())) {
+        if (!userRegisterDto.password().equals(userRegisterDto.confirmPassword())) {
             throw new RuntimeException("Passwords do not match");
         }
 
-        if (userRepository.existsByUsername(userRegisterDto.getUsername())) {
+        if (userRepository.existsByUsername(userRegisterDto.username())) {
             throw new RuntimeException("Username already exists");
         }
-        if (userRepository.existsByEmail(userRegisterDto.getEmail())) {
+        if (userRepository.existsByEmail(userRegisterDto.email())) {
             throw new RuntimeException("Email already exists");
         }
 
         User user = new User()
-                .setUsername(userRegisterDto.getUsername())
-                .setEmail(userRegisterDto.getEmail())
-                .setPasswordHash(encoder.encode(userRegisterDto.getPassword()))
-                .setRole(userRegisterDto.getRole())
+                .setUsername(userRegisterDto.username())
+                .setEmail(userRegisterDto.email())
+                .setPasswordHash(encoder.encode(userRegisterDto.password()))
+                .setRole(userRegisterDto.role())
                 .setStatus("pending");
 
         return new UserDetailsDto(userRepository.save(user));

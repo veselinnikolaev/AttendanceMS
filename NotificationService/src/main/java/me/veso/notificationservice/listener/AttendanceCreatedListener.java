@@ -19,13 +19,13 @@ public class AttendanceCreatedListener {
 
     @RabbitHandler
     public void handleAttendanceCreated(AttendanceDetailsDto attendanceDetailsDto){
-        UserDetailsDto user = client.getForEntity(userServiceUrl + "/{id}", UserDetailsDto.class, attendanceDetailsDto.getUserId()).getBody();
+        UserDetailsDto user = client.getForEntity(userServiceUrl + "/{id}", UserDetailsDto.class, attendanceDetailsDto.userId()).getBody();
 
-        mailService.send(user.getEmail(), "New Attendance",
+        mailService.send(user.email(), "New Attendance",
                 """
                 Hi %s,
                 There is a new attendance for your profile!
                 Attendance status: %s.
-                """.formatted(user.getUsername(), attendanceDetailsDto.getStatus()));
+                """.formatted(user.username(), attendanceDetailsDto.status()));
     }
 }

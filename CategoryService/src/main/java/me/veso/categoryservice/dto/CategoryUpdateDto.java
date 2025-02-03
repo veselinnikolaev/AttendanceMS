@@ -1,19 +1,18 @@
 package me.veso.categoryservice.dto;
 
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Positive;
-import lombok.Getter;
+import jakarta.validation.constraints.*;
 
 import java.util.List;
 
-@Getter
-public class CategoryUpdateDto {
-    @NotBlank(message = "Name is required")
-    private String name;
-    @Positive(message = "Checker ID must be positive number")
-    @NotNull(message = "Checker ID is required")
-    private Long checkerId;
-    @NotBlank(message = "Attendants IDs are required")
-    private List<@Positive(message = "Attendant ID must be positive number") Long> attendantsIds;
-}
+public record CategoryUpdateDto(
+        @NotBlank(message = "Name is required")
+        @Size(max = 100, message = "Name must be at most 100 characters")
+        String name,
+
+        @NotNull(message = "Checker ID is required")
+        @Positive(message = "Checker ID must be a positive number")
+        Long checkerId,
+
+        @NotEmpty(message = "At least one attendant is required")
+        List<@NotNull(message = "Attendant ID cannot be null") @Positive(message = "Attendant ID must be a positive number") Long> attendantsIds
+) {}

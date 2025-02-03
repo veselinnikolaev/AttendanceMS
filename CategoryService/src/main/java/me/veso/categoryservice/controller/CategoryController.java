@@ -22,7 +22,6 @@ public class CategoryController {
 
     @PostMapping
     public ResponseEntity<CategoryDetailsDto> createCategory(@Valid @RequestBody CategoryCreationDto categoryCreationDto) {
-        //TODO: Notify checker for this category
         return ResponseEntity.status(HttpStatus.CREATED).body(categoryService.createCategory(categoryCreationDto));
     }
 
@@ -46,7 +45,6 @@ public class CategoryController {
     public ResponseEntity<CategoryDetailsDto> assignAttendantsToCategory(
             @NotBlank(message = "Category id is required") @PathVariable("id") String id,
             @Valid @RequestBody List<Long> attendantsIds) {
-        //TODO: Notify checker for this category
         return ResponseEntity.ok(categoryService.assignAttendantsToCategory(id, attendantsIds));
     }
 

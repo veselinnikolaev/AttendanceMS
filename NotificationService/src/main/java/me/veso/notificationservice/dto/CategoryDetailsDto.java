@@ -1,15 +1,10 @@
 package me.veso.notificationservice.dto;
 
-import lombok.Getter;
-import lombok.Setter;
-
 import java.util.List;
 
-@Getter
-@Setter
-public class CategoryDetailsDto {
-    private String id;
-    private String name;
-    private Long checkerId;
-    private List<Long> attendantsIds;
-}
+public record CategoryDetailsDto(
+        String id,
+        String name,
+        Long checkerId,
+        List<Long> attendantsIds
+) {}

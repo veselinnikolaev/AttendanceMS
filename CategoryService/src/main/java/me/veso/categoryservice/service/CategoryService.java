@@ -23,27 +23,31 @@ public class CategoryService {
 
     public CategoryDetailsDto createCategory(CategoryCreationDto categoryCreationDto) {
         Category category = new Category()
-                .setName(categoryCreationDto.getName())
-                .setChecker(userIdService.saveIdLongIfNotExists(categoryCreationDto.getCheckerId()))
-                .setAttendants(userIdService.saveIdsLongIfNotExist(categoryCreationDto.getAttendantsIds()));
+                .setName(categoryCreationDto.name())
+                .setChecker(userIdService.saveIdLongIfNotExists(categoryCreationDto.checkerId()))
+                .setAttendants(userIdService.saveIdsLongIfNotExist(categoryCreationDto.attendantsIds()));
 
         Category categorySaved = categoryRepository.save(category);
 
         rabbitTemplate.convertAndSend(MessageQueueConfig.EXCHANGE_NAME, "users.assigned",
-                Map.of("userIds", categoryCreationDto.getAttendantsIds(), "categoryId", categorySaved.getId()));
+                Map.of("checkerId", categoryCreationDto.checkerId(),
+                        "attendantsIds", categoryCreationDto.attendantsIds(),
+                        "categoryId", categorySaved.getId()));
 
         return new CategoryDetailsDto(categorySaved);
     }
 
     public CategoryDetailsDto updateCategory(String id, CategoryUpdateDto categoryUpdateDto) {
         Category category = new Category()
-                .setName(categoryUpdateDto.getName())
-                .setChecker(userIdService.saveIdLongIfNotExists(categoryUpdateDto.getCheckerId()))
-                .setAttendants(userIdService.saveIdsLongIfNotExist(categoryUpdateDto.getAttendantsIds()));
+                .setName(categoryUpdateDto.name())
+                .setChecker(userIdService.saveIdLongIfNotExists(categoryUpdateDto.checkerId()))
+                .setAttendants(userIdService.saveIdsLongIfNotExist(categoryUpdateDto.attendantsIds()));
         category.setId(id);
 
         rabbitTemplate.convertAndSend(MessageQueueConfig.EXCHANGE_NAME, "users.assigned",
-                Map.of("userIds", categoryUpdateDto.getAttendantsIds(), "categoryId", id));
+                Map.of("checkerId", categoryUpdateDto.checkerId(),
+                        "attendantsIds", categoryUpdateDto.attendantsIds(),
+                        "categoryId", id));
 
         return new CategoryDetailsDto(categoryRepository.save(category));
     }
@@ -60,7 +64,9 @@ public class CategoryService {
         category.addAttendants(userIdService.saveIdsLongIfNotExist(attendantsIds));
 
         rabbitTemplate.convertAndSend(MessageQueueConfig.EXCHANGE_NAME, "users.assigned",
-                Map.of("userIds", attendantsIds, "categoryId", id));
+                Map.of("checkerId", category.getChecker().getUserId(),
+                        "attendantsIds", attendantsIds,
+                        "categoryId", id));
 
         return new CategoryDetailsDto(categoryRepository.save(category));
     }

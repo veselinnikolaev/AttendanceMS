@@ -22,9 +22,9 @@ public class AttendanceService {
 
     public AttendanceDetailsDto createAttendance(AttendanceCreationDto attendanceCreationDto) {
         Attendance attendance = new Attendance()
-                .setStatus(attendanceCreationDto.getStatus())
-                .setUserId(userIdService.saveIdLongIfNotExists(attendanceCreationDto.getUserId()))
-                .setCategoryId(categoryService.saveIdLongIfNotExists(attendanceCreationDto.getCategoryId()));
+                .setStatus(attendanceCreationDto.status())
+                .setUserId(userIdService.saveIdLongIfNotExists(attendanceCreationDto.userId()))
+                .setCategoryId(categoryService.saveIdLongIfNotExists(attendanceCreationDto.categoryId()));
 
         Attendance attendanceSaved = attendanceRepository.save(attendance);
 
