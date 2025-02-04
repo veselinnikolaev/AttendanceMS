@@ -1,23 +1,33 @@
 package me.veso.attendanceservice.service;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import me.veso.attendanceservice.client.UserClient;
 import me.veso.attendanceservice.entity.UserId;
 import me.veso.attendanceservice.repository.UserIdRepository;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
+
+import java.util.concurrent.CompletableFuture;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class UserIdService {
     private final UserIdRepository userIdRepository;
-    private final RestTemplate client;
-    private final String userServiceUrl = "http://USER_SERVICE/users";
+    private final UserClient client;
 
     public UserId saveIdLongIfNotExists(Long id) {
-        String status = client.getForEntity(userServiceUrl + "/{id}/status", String.class, id).getBody();
-        if(!"approved".equals(status)){
-            throw new RuntimeException("User is not approved, actual status " + status);
-        }
+        CompletableFuture
+                .supplyAsync(() -> client.getStatusForId(id))
+                .exceptionally(ex -> {
+                    log.error("Failed to fetch user status for ID {}: {}", id, ex.getMessage());
+                    return null;
+                }).thenAccept(status -> {
+                    if (!"approved".equals(status)) {
+                        log.warn("User is not approved, status {}", status);
+                        throw new RuntimeException("User is not approved, actual status " + status);
+                    }
+                }).join();
 
         return userIdRepository.findByUserId(id)
                 .orElseGet(() -> userIdRepository.save(new UserId().setUserId(id)));

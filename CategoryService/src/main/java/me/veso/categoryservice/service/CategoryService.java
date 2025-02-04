@@ -1,77 +1,114 @@
 package me.veso.categoryservice.service;
 
 import lombok.RequiredArgsConstructor;
-import me.veso.categoryservice.config.MessageQueueConfig;
-import me.veso.categoryservice.dto.CategoryCreationDto;
-import me.veso.categoryservice.dto.CategoryDetailsDto;
-import me.veso.categoryservice.dto.CategoryUpdateDto;
+import lombok.extern.slf4j.Slf4j;
+import me.veso.categoryservice.client.RabbitClient;
+import me.veso.categoryservice.dto.*;
 import me.veso.categoryservice.entity.Category;
 import me.veso.categoryservice.repository.CategoryRepository;
-import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class CategoryService {
     private final CategoryRepository categoryRepository;
     private final UserIdService userIdService;
-    private final RabbitTemplate rabbitTemplate;
+    private final RabbitClient rabbitClient;
 
     public CategoryDetailsDto createCategory(CategoryCreationDto categoryCreationDto) {
+        log.info("Creating category with name: {}", categoryCreationDto.name());
+
         Category category = new Category()
                 .setName(categoryCreationDto.name())
                 .setChecker(userIdService.saveIdLongIfNotExists(categoryCreationDto.checkerId()))
                 .setAttendants(userIdService.saveIdsLongIfNotExist(categoryCreationDto.attendantsIds()));
 
         Category categorySaved = categoryRepository.save(category);
+        log.info("Category created with ID: {}", categorySaved.getId());
 
-        rabbitTemplate.convertAndSend(MessageQueueConfig.EXCHANGE_NAME, "users.assigned",
-                Map.of("checkerId", categoryCreationDto.checkerId(),
-                        "attendantsIds", categoryCreationDto.attendantsIds(),
-                        "categoryId", categorySaved.getId()));
+        UsersAssignedEvent usersAssignedEvent = new UsersAssignedEvent(
+                categoryCreationDto.checkerId(),
+                categoryCreationDto.attendantsIds(),
+                categorySaved.getId()
+        );
+        rabbitClient.notifyUsersAssigned(usersAssignedEvent);
+        log.info("Users assigned event notified for category ID: {}", categorySaved.getId());
 
         return new CategoryDetailsDto(categorySaved);
     }
 
     public CategoryDetailsDto updateCategory(String id, CategoryUpdateDto categoryUpdateDto) {
-        Category category = new Category()
-                .setName(categoryUpdateDto.name())
-                .setChecker(userIdService.saveIdLongIfNotExists(categoryUpdateDto.checkerId()))
-                .setAttendants(userIdService.saveIdsLongIfNotExist(categoryUpdateDto.attendantsIds()));
-        category.setId(id);
+        log.info("Updating category with ID: {}", id);
 
-        rabbitTemplate.convertAndSend(MessageQueueConfig.EXCHANGE_NAME, "users.assigned",
-                Map.of("checkerId", categoryUpdateDto.checkerId(),
-                        "attendantsIds", categoryUpdateDto.attendantsIds(),
-                        "categoryId", id));
+        // Проверка дали категорията съществува
+        Category existingCategory = categoryRepository.findById(id).orElseThrow(() -> {
+            log.error("Category with ID {} not found", id);
+            return new RuntimeException("Category not found, ID " + id);
+        });
 
-        return new CategoryDetailsDto(categoryRepository.save(category));
+        existingCategory.setName(categoryUpdateDto.name());
+        existingCategory.setChecker(userIdService.saveIdLongIfNotExists(categoryUpdateDto.checkerId()));
+        existingCategory.setAttendants(userIdService.saveIdsLongIfNotExist(categoryUpdateDto.attendantsIds()));
+
+        log.info("Category with ID {} updated", id);
+
+        UsersAssignedEvent usersAssignedEvent = new UsersAssignedEvent(
+                categoryUpdateDto.checkerId(),
+                categoryUpdateDto.attendantsIds(),
+                id
+        );
+        rabbitClient.notifyUsersAssigned(usersAssignedEvent);
+        log.info("Users assigned event notified for category ID: {}", id);
+
+        return new CategoryDetailsDto(categoryRepository.save(existingCategory));
     }
 
     public void deleteCategory(String id) {
-        rabbitTemplate.convertAndSend(MessageQueueConfig.EXCHANGE_NAME, "category.deleted", id);
+        log.info("Deleting category with ID: {}", id);
+
+        rabbitClient.notifyCategoryDeleted(new CategoryDeletedEvent(id));
+        log.info("Category deleted event notified for category ID: {}", id);
 
         categoryRepository.deleteById(id);
+        log.info("Category with ID {} deleted", id);
     }
 
     @Transactional
     public CategoryDetailsDto assignAttendantsToCategory(String id, List<Long> attendantsIds) {
-        Category category = categoryRepository.findById(id).orElseThrow(() -> new RuntimeException("Category not found"));
+        log.info("Assigning attendants to category with ID: {}", id);
+
+        Category category = categoryRepository.findById(id).orElseThrow(() -> {
+            log.error("Category with ID {} not found", id);
+            return new RuntimeException("Category not found, ID " + id);
+        });
         category.addAttendants(userIdService.saveIdsLongIfNotExist(attendantsIds));
 
-        rabbitTemplate.convertAndSend(MessageQueueConfig.EXCHANGE_NAME, "users.assigned",
-                Map.of("checkerId", category.getChecker().getUserId(),
-                        "attendantsIds", attendantsIds,
-                        "categoryId", id));
+        log.info("Assigned attendants to category ID: {}", id);
+
+        UsersAssignedEvent usersAssignedEvent = new UsersAssignedEvent(
+                category.getChecker().getUserId(),
+                attendantsIds,
+                id
+        );
+        rabbitClient.notifyUsersAssigned(usersAssignedEvent);
+        log.info("Users assigned event notified for category ID: {}", id);
 
         return new CategoryDetailsDto(categoryRepository.save(category));
     }
 
     public CategoryDetailsDto getCategory(String id) {
-        return new CategoryDetailsDto(categoryRepository.findById(id).orElseThrow(() -> new RuntimeException("Category not found")));
+        log.info("Fetching details for category with ID: {}", id);
+
+        Category category = categoryRepository.findById(id).orElseThrow(() -> {
+            log.error("Category with ID {} not found", id);
+            return new RuntimeException("Category not found, ID " + id);
+        });
+
+        log.info("Category with ID {} fetched", id);
+        return new CategoryDetailsDto(category);
     }
 }

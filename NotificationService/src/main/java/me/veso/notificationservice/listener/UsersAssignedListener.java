@@ -1,58 +1,70 @@
 package me.veso.notificationservice.listener;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import me.veso.notificationservice.client.CategoryClient;
+import me.veso.notificationservice.client.UserClient;
 import me.veso.notificationservice.dto.CategoryDetailsDto;
 import me.veso.notificationservice.dto.UserDetailsDto;
+import me.veso.notificationservice.dto.UsersAssignedEvent;
 import me.veso.notificationservice.service.MailService;
 import org.springframework.amqp.rabbit.annotation.RabbitHandler;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.stereotype.Component;
-import org.springframework.web.client.RestTemplate;
 
-import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @Component
 @RabbitListener(queues = "users.assigning.queue")
 @RequiredArgsConstructor
+@Slf4j
 public class UsersAssignedListener {
     private final MailService mailService;
-    private final RestTemplate client;
-    private final String userServiceUrl = "http://USER_SERVICE/users";
-    private final String categoryServiceUrl = "http://CATEGORY_SERVICE/categories";
+    private final UserClient userClient;
+    private final CategoryClient categoryClient;
 
     @RabbitHandler
-    public void handleAssigned(Map<String, Object> payload) throws ExecutionException, InterruptedException {
-        Long checkerId = (Long) payload.get("checkerId");
-        List<Long> attendantsIds = Arrays.asList((Long[]) payload.get("attendantsIds"));
-        String categoryId = (String) payload.get("categoryId");
+    public void handleAssigned(UsersAssignedEvent usersAssignedEvent) {
+        Long checkerId = usersAssignedEvent.checkerId();
+        List<Long> attendantsIds = usersAssignedEvent.attendantsIds();
+        String categoryId = usersAssignedEvent.categoryId();
 
-        List<Long> usersIds = Stream
-                .concat(Stream.of(checkerId), attendantsIds.stream())
+        List<Long> usersIds = Stream.concat(Stream.of(checkerId), attendantsIds.stream())
                 .collect(Collectors.toList());
 
-        UserDetailsDto[] users =
-                CompletableFuture.supplyAsync(() ->
-                                client.postForEntity(userServiceUrl, usersIds, UserDetailsDto[].class).getBody())
-                        .get();
+        CompletableFuture<List<UserDetailsDto>> usersFuture = CompletableFuture.supplyAsync(() ->
+                        userClient.getUsersForIds(usersIds))
+                .exceptionally(ex -> {
+                    log.error("Failed to fetch user details: {}", ex.getMessage());
+                    return List.of();
+                });
 
-        CategoryDetailsDto category =
-                CompletableFuture.supplyAsync(() ->
-                                client.getForEntity(categoryServiceUrl + "/{id}", CategoryDetailsDto.class, categoryId).getBody())
-                        .get();
+        CompletableFuture<CategoryDetailsDto> categoryFuture = CompletableFuture.supplyAsync(() ->
+                        categoryClient.getCategoryForId(categoryId))
+                .exceptionally(ex -> {
+                    log.error("Failed to fetch category details: {}", ex.getMessage());
+                    return new CategoryDetailsDto(categoryId, "Unknown Category", null, null);
+                });
 
-        for (UserDetailsDto user : users) {
-            mailService.send(user.email(), "Assigned to Category",
-                            """
+        usersFuture.thenCombine(categoryFuture, (users, category) -> {
+            if (users.isEmpty()) {
+                log.warn("No users found for IDs: {}", usersIds);
+                return null;
+            }
+
+            users.forEach(user -> mailService.send(
+                    user.email(),
+                    "Assigned to Category",
+                    String.format("""
                             Hi %s,
-                            You have been assigned for new category as %s!
+                            You have been assigned to a new category as %s!
                             Category name: %s.
-                            """.formatted(user.username(), user.role(), category.name()));
-        }
+                            """, user.username(), user.role(), category.name())
+            ));
+            return null;
+        });
     }
 }
