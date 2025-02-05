@@ -2,10 +2,10 @@ package me.veso.authservice.controller;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -27,7 +27,7 @@ public class ExceptionHandlerController {
         e.getBindingResult().getFieldErrors().forEach(error -> {
             String fieldName = error.getField();
             String errorMessage = error.getDefaultMessage();
-            validationErrors.computeIfAbsent(fieldName, _ -> new ArrayList<>()).add(errorMessage);
+            validationErrors.computeIfAbsent(fieldName, fieldValue -> new ArrayList<>()).add(errorMessage);
         });
 
         return ResponseEntity.badRequest().body(validationErrors);

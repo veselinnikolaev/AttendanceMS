@@ -1,14 +1,18 @@
+server:
+  port: 0
+
 spring:
   application:
     name: AUTH_SERVICE
+  docker:
+    compose:
+      file: AuthService/docker-compose.yaml
+
 
 eureka:
-   client:
-     service-url:
-       defaultZone: http://localhost:8761/eureka/
-
-server:
-  port: 0
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
 
 free-resources:
   urls:
