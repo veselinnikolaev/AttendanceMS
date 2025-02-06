@@ -3,6 +3,7 @@ package me.veso.authservice.config;
 import lombok.RequiredArgsConstructor;
 import me.veso.authservice.client.UserClient;
 import me.veso.authservice.service.MyUserDetailsService;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -24,16 +25,31 @@ import org.springframework.security.web.SecurityFilterChain;
 public class SecurityConfig {
     private final UserClient userClient;
 
+    @Value("${free-resources.urls:}")
+    private String[] freeResourceUrls;
+
+    @Value("${authenticated-resources.urls:}")
+    private String[] authenticatedResourceUrls;
+
+    @Value("${admin-resources.urls:}")
+    private String[] adminResourceUrls;
+
+    @Value("${checker-resources.urls:}")
+    private String[] checkerResourceUrls;
+
+    @Value("${attendant-resources.urls:}")
+    private String[] attendantResourceUrls;
+
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity) throws Exception {
         return httpSecurity
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers("/auth/login", "lb://USER_SERVICE/users/register", "lb://SERVICE_REGISTRY/eureka").permitAll()
-                        .requestMatchers("lb://USER_SERVICE/users/**", "lb://CATEGORY_SERVICE/categories/**", "lb://ATTENDANCE_SERVICE/attendance/**").authenticated()
-                        .requestMatchers("lb://USER_SERVICE/users/**", "lb://CATEGORY_SERVICE/categories/**", "lb://ATTENDANCE_SERVICE/attendance/**", "/auth/**").hasRole("admin")
-                        .requestMatchers("lb://CATEGORY_SERVICE/categories/*/assign", "lb://ATTENDANCE_SERVICE/attendance/user/{userId}", "lb://ATTENDANCE_SERVICE/attendance/category/{categoryId}").hasRole("checker")
-                        .requestMatchers("lb://ATTENDANCE_SERVICE/attendance/user/{userId}", "lb://ATTENDANCE_SERVICE/attendance/category/{categoryId}").hasRole("attendant")
+                        .requestMatchers(freeResourceUrls).permitAll()
+                        .requestMatchers(authenticatedResourceUrls).authenticated()
+                        .requestMatchers(adminResourceUrls).hasRole("admin")
+                        .requestMatchers(checkerResourceUrls).hasRole("checker")
+                        .requestMatchers(attendantResourceUrls).hasRole("attendant")
                         .anyRequest().denyAll())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authenticationProvider(authenticationProvider())

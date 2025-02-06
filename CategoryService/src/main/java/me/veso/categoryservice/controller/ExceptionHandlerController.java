@@ -27,7 +27,7 @@ public class ExceptionHandlerController {
         e.getBindingResult().getFieldErrors().forEach(error -> {
             String fieldName = error.getField();
             String errorMessage = error.getDefaultMessage();
-            validationErrors.computeIfAbsent(fieldName, _ -> new ArrayList<>()).add(errorMessage);
+            validationErrors.computeIfAbsent(fieldName, fieldValue -> new ArrayList<>()).add(errorMessage);
         });
 
         return ResponseEntity.badRequest().body(validationErrors);
