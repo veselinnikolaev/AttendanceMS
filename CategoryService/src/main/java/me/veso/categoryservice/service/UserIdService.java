@@ -7,6 +7,7 @@ import me.veso.categoryservice.entity.UserId;
 import me.veso.categoryservice.repository.UserIdRepository;
 import org.springframework.stereotype.Service;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -38,8 +39,14 @@ public class UserIdService {
     }
 
     public List<UserId> saveIdsLongIfNotExist(List<Long> ids) {
-        List<String> statuses = CompletableFuture
-                .supplyAsync(() -> client.getStatusesForIds(ids))
+        List<String> statuses = CompletableFuture.supplyAsync(() -> client.getStatusesForIds(ids))
+                .thenApply(usersEntity -> {
+                    if (usersEntity.getBody() == null) {
+                        log.error("Failed to fetch users with ids {}", ids);
+                        throw new RuntimeException("Failed to fetch users with ids " + ids);
+                    }
+                    return Arrays.asList(usersEntity.getBody());
+                })
                 .exceptionally(ex -> {
                     log.error("Failed to fetch user statuses for IDs {}: {}", ids, ex.getMessage());
                     return null;

@@ -19,17 +19,15 @@ public class CategoryService {
 
     public CategoryId saveIfNotExists(String categoryId) {
         log.debug("Checking if category {} exists", categoryId);
-        CompletableFuture
-                .supplyAsync(() -> client.getCategoryForId(categoryId))
-                .exceptionally(ex -> {
-                    log.error("Failed to fetch category details for ID {}: {}", categoryId, ex.getMessage());
-                    return null;
-                })
+        CompletableFuture.supplyAsync(() -> client.getCategoryForId(categoryId))
                 .thenAccept(category -> {
                     if (category == null) {
                         log.warn("Category with id {} does not exist", categoryId);
                         throw new RuntimeException("Category with id " + categoryId + " does not exist");
                     }
+                }).exceptionally(ex -> {
+                    log.error("Failed to fetch category details for ID {}: {}", categoryId, ex.getMessage());
+                    return null;
                 }).join();
 
         return repository.findByCategoryId(categoryId)

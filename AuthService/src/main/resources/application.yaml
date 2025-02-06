@@ -6,7 +6,7 @@ spring:
     name: AUTH_SERVICE
   docker:
     compose:
-      file: AuthService/docker-compose.yaml
+      file: AuthService/compose.yaml
 
 
 eureka:

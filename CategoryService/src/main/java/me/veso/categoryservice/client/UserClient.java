@@ -1,10 +1,10 @@
 package me.veso.categoryservice.client;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
-import java.util.Arrays;
 import java.util.List;
 
 @Component
@@ -17,9 +17,7 @@ public class UserClient {
         return restTemplate.getForEntity(userServiceUrl + "/{id}/status", String.class, id).getBody();
     }
 
-    public List<String> getStatusesForIds(List<Long> ids) {
-        return Arrays.asList(
-                restTemplate.postForEntity(userServiceUrl + "/status", ids, String[].class).getBody()
-        );
+    public ResponseEntity<String[]> getStatusesForIds(List<Long> ids) {
+        return restTemplate.postForEntity(userServiceUrl + "/status", ids, String[].class);
     }
 }

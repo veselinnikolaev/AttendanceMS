@@ -1,40 +1,31 @@
 spring:
   cloud:
     gateway:
-      mvc:
-        routes:
-          - id: auth-service
-            uri: lb://AUTH_SERVICE
-            predicates:
-              - Path=/auth/**
-            filters:
-              - JwtFilter
+      routes:
+        - id: auth-service
+          uri: lb://AUTH_SERVICE
+          predicates:
+            - Path=/auth/**
 
-          - id: attendance-service
-            uri: lb://ATTENDANCE_SERVICE
-            predicates:
-              - Path=/attendance/**
-            filters:
-              - JwtFilter
+        - id: attendance-service
+          uri: lb://ATTENDANCE_SERVICE
+          predicates:
+            - Path=/attendance/**
 
-          - id: category-service
-            uri: lb://CATEGORY_SERVICE
-            predicates:
-              - Path=/categories/**
-            filters:
-              - JwtFilter
+        - id: category-service
+          uri: lb://CATEGORY_SERVICE
+          predicates:
+            - Path=/categories/**
 
-          - id: user-service
-            uri: lb://USER_SERVICE
-            predicates:
-              - Path=/users/**
-            filters:
-              - JwtFilter
+        - id: user-service
+          uri: lb://USER_SERVICE
+          predicates:
+            - Path=/users/**
 
-          - id: eureka-service
-            uri: lb://SERVICE_REGISTRY
-            predicates:
-              - Path=/eureka/**
+        - id: eureka-service
+          uri: lb://SERVICE_REGISTRY
+          predicates:
+            - Path=/eureka/**
 
   application:
     name: API_GATEWAY

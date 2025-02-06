@@ -12,6 +12,8 @@ import org.springframework.amqp.rabbit.annotation.RabbitHandler;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.stereotype.Component;
 
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
@@ -37,9 +39,16 @@ public class UsersAssignedListener {
 
         CompletableFuture<List<UserDetailsDto>> usersFuture = CompletableFuture.supplyAsync(() ->
                         userClient.getUsersForIds(usersIds))
+                .thenApply(usersEntity -> {
+                    if (usersEntity.getBody() == null) {
+                        log.error("Failed to fetch users by ids {}", usersIds);
+                        throw new RuntimeException("Failed to fetch users by ids " + usersIds);
+                    }
+                    return Arrays.asList(usersEntity.getBody());
+                })
                 .exceptionally(ex -> {
                     log.error("Failed to fetch user details: {}", ex.getMessage());
-                    return List.of();
+                    return Collections.emptyList();
                 });
 
         CompletableFuture<CategoryDetailsDto> categoryFuture = CompletableFuture.supplyAsync(() ->

@@ -1,104 +1,94 @@
 package me.veso.apigateway.filter;
 
-import jakarta.servlet.FilterChain;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import me.veso.apigateway.client.AuthClient;
 import me.veso.apigateway.dto.TokenResponse;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cloud.gateway.filter.GlobalFilter;
+import org.springframework.core.Ordered;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.server.reactive.ServerHttpRequest;
+import org.springframework.http.server.reactive.ServerHttpResponse;
 import org.springframework.stereotype.Component;
-import org.springframework.web.client.HttpClientErrorException;
-import org.springframework.web.client.RestTemplate;
-import org.springframework.web.filter.OncePerRequestFilter;
-import org.springframework.web.util.UriComponentsBuilder;
+import org.springframework.web.server.ServerWebExchange;
+import reactor.core.publisher.Mono;
 
-import java.io.IOException;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 @Component
 @RequiredArgsConstructor
-public class JwtFilter extends OncePerRequestFilter {
-    private final RestTemplate restTemplate;
+@Slf4j
+public class JwtFilter implements GlobalFilter, Ordered {
+    private final AuthClient authClient;
 
-    private final String authServiceUrl = "http://AUTH_SERVICE/auth";
-
-    @Value("${jwt.public-urls}")
+    @Value("${free-resources.urls:}")
     private List<String> freeResourceUrls;
 
     @Override
-    protected boolean shouldNotFilter(HttpServletRequest request) {
-        String path = request.getRequestURI();
-        return freeResourceUrls.stream().anyMatch(path::startsWith);
+    public Mono<Void> filter(ServerWebExchange exchange, org.springframework.cloud.gateway.filter.GatewayFilterChain chain) {
+        ServerHttpRequest request = exchange.getRequest();
+
+        // Skip filtering for free resources
+        if (freeResourceUrls.stream().anyMatch(request.getURI().getPath()::startsWith)) {
+            return chain.filter(exchange);
+        }
+
+        // Extract token
+        String token = extractToken(request);
+        if (token == null) {
+            return handleAuthError(exchange, "Authorization header is missing or invalid", HttpStatus.UNAUTHORIZED);
+        }
+
+        // Validate token & check blacklist asynchronously
+        CompletableFuture<ResponseEntity<Boolean>> blacklistFuture = CompletableFuture.supplyAsync(() -> authClient.checkBlacklist(token));
+        CompletableFuture<ResponseEntity<TokenResponse>> tokenFuture = CompletableFuture.supplyAsync(() -> authClient.validateToken(token));
+
+        // Wait for all futures to complete (blocking call)
+        CompletableFuture.allOf(blacklistFuture, tokenFuture).join();
+
+        Boolean isBlacklisted = extractBodyOrDefault(blacklistFuture, "Failed to fetch token blacklist status: " + token, false);
+        if (Boolean.TRUE.equals(isBlacklisted)) {
+            return handleAuthError(exchange, "Token is blacklisted", HttpStatus.UNAUTHORIZED);
+        }
+
+        TokenResponse tokenResponse = extractBodyOrDefault(tokenFuture, "Failed to fetch token status: " + token, null);
+        if (tokenResponse == null || !tokenResponse.isValid()) {
+            return handleAuthError(exchange, "Invalid JWT token", HttpStatus.UNAUTHORIZED);
+        }
+
+        return chain.filter(exchange);  // Continue if valid
+    }
+
+    private String extractToken(ServerHttpRequest request) {
+        List<String> authHeaders = request.getHeaders().get(HttpHeaders.AUTHORIZATION);
+        if (authHeaders == null || authHeaders.isEmpty()) {
+            return null;
+        }
+        String authHeader = authHeaders.get(0);
+        return authHeader.startsWith("Bearer ") ? authHeader.substring(7) : null;
+    }
+
+    private Mono<Void> handleAuthError(ServerWebExchange exchange, String message, HttpStatus status) {
+        ServerHttpResponse response = exchange.getResponse();
+        response.setStatusCode(status);
+        return response.writeWith(Mono.just(response.bufferFactory().wrap(("{\"error\": \"" + message + "\"}").getBytes())));
+    }
+
+    private <T> T extractBodyOrDefault(CompletableFuture<ResponseEntity<T>> future, String errorMessage, T defaultValue) {
+        try {
+            return future.get().getBody();
+        } catch (Exception e) {
+            log.error("{} - Reason: {}", errorMessage, e.getMessage());
+            return defaultValue;
+        }
     }
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws IOException {
-        try {
-            String token = extractToken(request);
-            validateTokenAndCheckBlacklist(token);
-            filterChain.doFilter(request, response);
-        } catch (RuntimeException e) {
-            handleAuthenticationError(response, e.getMessage(), HttpStatus.UNAUTHORIZED);
-        } catch (Exception e) {
-            handleAuthenticationError(response, "Internal server error", HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
-
-    private String extractToken(HttpServletRequest request) {
-        String authHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            throw new RuntimeException("Authorization header is missing or invalid");
-        }
-        return authHeader.substring(7);
-    }
-
-    private void validateTokenAndCheckBlacklist(String token) {
-        try {
-            // First check blacklist
-            ResponseEntity<Boolean> blacklistResponse = checkBlacklist(token);
-            if (blacklistResponse.getBody() != null && blacklistResponse.getBody()) {
-                throw new RuntimeException("Token is blacklisted");
-            }
-
-            // Then validate token
-            ResponseEntity<TokenResponse> validationResponse = validateToken(token);
-            if (validationResponse.getBody() == null || !validationResponse.getBody().isValid()) {
-                throw new RuntimeException("Invalid JWT token");
-            }
-        } catch (HttpClientErrorException e) {
-            throw new RuntimeException("Error validating token");
-        }
-    }
-
-    private ResponseEntity<TokenResponse> validateToken(String token) {
-        String url = UriComponentsBuilder
-                .fromUriString(authServiceUrl)
-                .path("/validate")
-                .queryParam("token", token)
-                .build()
-                .toUriString();
-
-        return restTemplate.getForEntity(url, TokenResponse.class);
-    }
-
-    private ResponseEntity<Boolean> checkBlacklist(String token) {
-        String url = UriComponentsBuilder
-                .fromUriString(authServiceUrl)
-                .path("/blacklist/check")
-                .queryParam("token", token)
-                .build()
-                .toUriString();
-
-        return restTemplate.getForEntity(url, Boolean.class);
-    }
-
-    private void handleAuthenticationError(HttpServletResponse response, String message, HttpStatus status) throws IOException {
-        response.setStatus(status.value());
-        response.setContentType("application/json");
-        response.getWriter().write(String.format("{\"error\": \"%s\"}", message));
-        response.getWriter().flush();
+    public int getOrder() {
+        return Ordered.HIGHEST_PRECEDENCE;
     }
 }
