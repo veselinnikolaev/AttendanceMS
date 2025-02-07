@@ -30,11 +30,10 @@ public class UsersAssignedListener {
 
     @RabbitHandler
     public void handleAssigned(UsersAssignedEvent usersAssignedEvent) {
-        Long checkerId = usersAssignedEvent.checkerId();
-        List<Long> attendantsIds = usersAssignedEvent.attendantsIds();
         String categoryId = usersAssignedEvent.categoryId();
 
-        List<Long> usersIds = Stream.concat(Stream.of(checkerId), attendantsIds.stream())
+        List<Long> usersIds = Stream.concat(Stream.of(usersAssignedEvent.checkerId()),
+                        usersAssignedEvent.attendantsIds().stream())
                 .collect(Collectors.toList());
 
         CompletableFuture<List<UserDetailsDto>> usersFuture = CompletableFuture.supplyAsync(() ->
@@ -73,6 +72,9 @@ public class UsersAssignedListener {
                             Category name: %s.
                             """, user.username(), user.role(), category.name())
             ));
+            return null;
+        }).exceptionally(ex -> {
+            log.error("Failed sending mails to ids {}", usersIds);
             return null;
         });
     }

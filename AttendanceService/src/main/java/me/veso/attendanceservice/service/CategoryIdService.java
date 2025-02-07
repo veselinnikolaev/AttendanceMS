@@ -3,7 +3,6 @@ package me.veso.attendanceservice.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import me.veso.attendanceservice.client.CategoryClient;
-import me.veso.attendanceservice.dto.CategoryDetailsDto;
 import me.veso.attendanceservice.entity.CategoryId;
 import me.veso.attendanceservice.repository.CategoryIdRepository;
 import org.springframework.stereotype.Service;
@@ -22,31 +21,28 @@ public class CategoryIdService {
         log.info("Checking if category with ID {} exists.", id);
 
         try {
-            CategoryDetailsDto categoryDto = CompletableFuture
-                    .supplyAsync(() -> client.getCategoryForId(id))
-                    .exceptionally(ex -> {
+            return CompletableFuture.supplyAsync(() -> client.getCategoryForId(id))
+                    .thenCompose(category -> {
+                        if (category == null) {
+                            log.warn("Category with ID {} does not exist.", id);
+                            throw new RuntimeException("Category with ID " + id + " does not exist");
+                        }
+
+                        log.info("Category with ID {} found, processing the ID.", id);
+
+                        return CompletableFuture.supplyAsync(() -> categoryIdRepository.findByCategoryId(id)
+                                .orElseGet(() -> {
+                                    log.info("Category ID {} does not exist in the repository. Saving it.", id);
+                                    return categoryIdRepository.save(new CategoryId().setCategoryId(id));
+                                }));
+                    }).exceptionally(ex -> {
                         log.error("Failed to fetch category for ID {}: {}", id, ex.getMessage());
                         return null;
-                    })
-                    .get();
-
-            if (categoryDto == null) {
-                log.warn("Category with ID {} does not exist.", id);
-                throw new RuntimeException("Category with ID " + id + " does not exist");
-            }
-
-            log.info("Category with ID {} found, processing the ID.", id);
-
+                    }).get();
         } catch (InterruptedException | ExecutionException e) {
             log.error("Error fetching category for ID {}: {}", id, e.getMessage());
             throw new RuntimeException("Error fetching category for ID " + id, e);
         }
-
-        return categoryIdRepository.findByCategoryId(id)
-                .orElseGet(() -> {
-                    log.info("Category ID {} does not exist in the repository. Saving it.", id);
-                    return categoryIdRepository.save(new CategoryId().setCategoryId(id));
-                });
     }
 
     public CategoryId findByCategoryId(String id) {

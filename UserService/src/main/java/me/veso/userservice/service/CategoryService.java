@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 
 @Service
 @RequiredArgsConstructor
@@ -19,22 +20,28 @@ public class CategoryService {
 
     public CategoryId saveIfNotExists(String categoryId) {
         log.debug("Checking if category {} exists", categoryId);
-        CompletableFuture.supplyAsync(() -> client.getCategoryForId(categoryId))
-                .thenAccept(category -> {
-                    if (category == null) {
-                        log.warn("Category with id {} does not exist", categoryId);
-                        throw new RuntimeException("Category with id " + categoryId + " does not exist");
-                    }
-                }).exceptionally(ex -> {
-                    log.error("Failed to fetch category details for ID {}: {}", categoryId, ex.getMessage());
-                    return null;
-                }).join();
 
-        return repository.findByCategoryId(categoryId)
-                .orElseGet(() -> {
-                    log.info("Saving new category with id {}", categoryId);
-                    return repository.save(new CategoryId().setCategoryId(categoryId));
-                });
+        try {
+            return CompletableFuture.supplyAsync(() -> client.getCategoryForId(categoryId))
+                    .thenCompose(category -> {
+                        if (category == null) {
+                            log.warn("Category with id {} does not exist", categoryId);
+                            throw new RuntimeException("Category with id " + categoryId + " does not exist");
+                        }
+
+                        return CompletableFuture.supplyAsync(() -> repository.findByCategoryId(categoryId)
+                                .orElseGet(() -> {
+                                    log.info("Saving new category with id {}", categoryId);
+                                    return repository.save(new CategoryId().setCategoryId(categoryId));
+                                }));
+                    })
+                    .exceptionally(ex -> {
+                        log.error("Failed to process category details for ID {}: {}", categoryId, ex.getMessage());
+                        throw new RuntimeException("Failed to process category details", ex);
+                    }).get();
+        } catch (InterruptedException | ExecutionException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public CategoryId findByCategoryId(String id) {

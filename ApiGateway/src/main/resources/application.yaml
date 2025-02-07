@@ -23,7 +23,7 @@ spring:
             - Path=/users/**
 
         - id: eureka-service
-          uri: lb://SERVICE_REGISTRY
+          uri: http://localhost:8761
           predicates:
             - Path=/eureka/**
 
@@ -39,5 +39,5 @@ free-resources:
   urls:
     - "lb://AUTH_SERVICE/auth/login"
     - "lb://USER_SERVICE/users/register"
-    - "lb://SERVICE_REGISTRY/eureka/**"
+    - "http://localhost:8761/eureka/**"
 

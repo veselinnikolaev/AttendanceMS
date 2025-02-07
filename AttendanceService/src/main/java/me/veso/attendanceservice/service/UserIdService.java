@@ -8,6 +8,7 @@ import me.veso.attendanceservice.repository.UserIdRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 
 @Service
 @RequiredArgsConstructor
@@ -17,19 +18,23 @@ public class UserIdService {
     private final UserClient client;
 
     public UserId saveIdLongIfNotExists(Long id) {
-        CompletableFuture
-                .supplyAsync(() -> client.getStatusForId(id))
-                .exceptionally(ex -> {
-                    log.error("Failed to fetch user status for ID {}: {}", id, ex.getMessage());
-                    return null;
-                }).thenAccept(status -> {
-                    if (!"approved".equals(status)) {
-                        log.warn("User is not approved, status {}", status);
-                        throw new RuntimeException("User is not approved, actual status " + status);
-                    }
-                }).join();
+        try {
+            return CompletableFuture.supplyAsync(() -> client.getStatusForId(id))
+                    .thenCompose(status -> {
+                        if (!"approved".equals(status)) {
+                            log.warn("User is not approved, status {}", status);
+                            throw new RuntimeException("User is not approved, actual status " + status);
+                        }
 
-        return userIdRepository.findByUserId(id)
-                .orElseGet(() -> userIdRepository.save(new UserId().setUserId(id)));
+                        return CompletableFuture.supplyAsync(() -> userIdRepository.findByUserId(id)
+                                .orElseGet(() -> userIdRepository.save(new UserId().setUserId(id))));
+                    })
+                    .exceptionally(ex -> {
+                        log.error("Failed to fetch user status for ID {}: {}", id, ex.getMessage());
+                        return null;
+                    }).get();
+        } catch (InterruptedException | ExecutionException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

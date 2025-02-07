@@ -17,29 +17,40 @@ eureka:
 free-resources:
   urls:
     - "/auth/login"
+    - "/auth/validate"
     - "lb://USER_SERVICE/users/register"
-    - "lb://SERVICE_REGISTRY/eureka"
+    - "http://localhost:8761/eureka"
 
 authenticated-resources:
   urls:
-    - "lb://USER_SERVICE/users/**"
-    - "lb://CATEGORY_SERVICE/categories/**"
-    - "lb://ATTENDANCE_SERVICE/attendance/**"
+    - "/auth/logout"
+    - "/auth/blacklist/check"
+    - "lb://USER_SERVICE/users"
+    - "lb://USER_SERVICE/users/{id}"
+    - "lb://USER_SERVICE/users/{username}"
+    - "lb://USER_SERVICE/users/{id}/status"
+    - "lb://USER_SERVICE/users/status"
+    - "lb://ATTENDANCE_SERVICE/attendance"
+    - "lb://ATTENDANCE_SERVICE/attendance/user/{userId}"
+    - "lb://ATTENDANCE_SERVICE/attendance/category/{categoryId}"
+    - "lb://CATEGORY_SERVICE/categories/{id}"
 
 admin-resources:
   urls:
     - "lb://USER_SERVICE/users/**"
-    - "lb://CATEGORY_SERVICE/categories/**"
     - "lb://ATTENDANCE_SERVICE/attendance/**"
-    - "/auth/**"
+    - "lb://CATEGORY_SERVICE/categories"
+    - "lb://CATEGORY_SERVICE/categories/{id}"
+    - "lb://CATEGORY_SERVICE/categories/{id}/assign"
 
 checker-resources:
   urls:
-    - "lb://CATEGORY_SERVICE/categories/*/assign"
+    - "lb://CATEGORY_SERVICE/categories/{id}/assign"
     - "lb://ATTENDANCE_SERVICE/attendance/user/{userId}"
     - "lb://ATTENDANCE_SERVICE/attendance/category/{categoryId}"
 
 attendant-resources:
   urls:
     - "lb://ATTENDANCE_SERVICE/attendance/user/{userId}"
-    - "lb://ATTENDANCE_SERVICE/attendance/category/{categoryId}"
+    - "lb://CATEGORY_SERVICE/categories/{id}"
+

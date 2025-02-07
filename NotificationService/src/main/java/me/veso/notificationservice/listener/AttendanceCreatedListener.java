@@ -21,12 +21,7 @@ public class AttendanceCreatedListener {
 
     @RabbitHandler
     public void handleAttendanceCreated(AttendanceDetailsDto attendanceDetailsDto) {
-        CompletableFuture
-                .supplyAsync(() -> userClient.getUserForId(attendanceDetailsDto.userId()))
-                .exceptionally(ex -> {
-                    log.error("Failed to fetch user details for ID {}: {}", attendanceDetailsDto.userId(), ex.getMessage());
-                    return null;
-                })
+        CompletableFuture.supplyAsync(() -> userClient.getUserForId(attendanceDetailsDto.userId()))
                 .thenAccept(user -> {
                     if (user == null) {
                         log.warn("Skipping email notification for user ID {}, user not found.", attendanceDetailsDto.userId());
@@ -39,6 +34,9 @@ public class AttendanceCreatedListener {
                                     There is a new attendance for your profile!
                                     Attendance status: %s.
                                     """.formatted(user.username(), attendanceDetailsDto.status()));
+                }).exceptionally(ex -> {
+                    log.error("Failed to fetch user details for ID {}: {}", attendanceDetailsDto.userId(), ex.getMessage());
+                    return null;
                 });
     }
 }

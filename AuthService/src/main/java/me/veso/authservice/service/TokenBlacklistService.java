@@ -1,22 +1,19 @@
 package me.veso.authservice.service;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.redis.core.StringRedisTemplate;
+import me.veso.authservice.client.RedisClient;
 import org.springframework.stereotype.Service;
-
-import java.util.concurrent.TimeUnit;
 
 @Service
 @RequiredArgsConstructor
 public class TokenBlacklistService {
-    private final StringRedisTemplate redisTemplate;
-    private static final String BLACKLIST_PREFIX = "blacklisted_token:";
+    private final RedisClient redisClient;
 
     public void blacklistToken(String token, long expirationInSeconds) {
-        redisTemplate.opsForValue().set(BLACKLIST_PREFIX + token, "blacklisted", expirationInSeconds, TimeUnit.SECONDS);
+        redisClient.saveToken(token, expirationInSeconds);
     }
 
     public boolean isTokenBlacklisted(String token) {
-        return Boolean.TRUE.equals(redisTemplate.hasKey(BLACKLIST_PREFIX + token));
+        return Boolean.TRUE.equals(redisClient.isPresent(token));
     }
 }
