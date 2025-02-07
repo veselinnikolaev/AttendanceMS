@@ -20,31 +20,32 @@ public class AuthService {
     private final AuthenticationManager authenticationManager;
     private final TokenBlacklistService tokenBlackListService;
 
-    public boolean validateToken(String token){
-        return jwtService.validateToken(token);
+    public boolean validateToken(String token) {
+        return !jwtService.isTokenExpired(token)
+                && !tokenBlackListService.isTokenBlacklisted(token);
     }
 
-    public String extractUsernameFromToken(String token){
+    public String extractUsernameFromToken(String token) {
         return jwtService.extractUsername(token);
     }
 
-    public String extractRoleFromToken(String token){
+    public String extractRoleFromToken(String token) {
         return jwtService.extractRole(token);
     }
 
-    public long getTokenExpirationInSeconds(String token){
-        return jwtService.extractExpiration(token).getTime()/1000;
+    public long getTokenExpirationInSeconds(String token) {
+        return jwtService.extractExpiration(token).getTime() / 1000;
     }
 
-    public void blacklistToken(String token, long expirationInSeconds){
+    public void blacklistToken(String token, long expirationInSeconds) {
         tokenBlackListService.blacklistToken(token, expirationInSeconds);
     }
 
-    public boolean isTokenBlacklisted(String token){
+    public boolean isTokenBlacklisted(String token) {
         return tokenBlackListService.isTokenBlacklisted(token);
     }
 
-    public String getRole(UserDetails userDetails){
+    public String getRole(UserDetails userDetails) {
         return userDetails.getAuthorities()
                 .stream()
                 .map(GrantedAuthority::getAuthority)
@@ -53,10 +54,11 @@ public class AuthService {
     }
 
     public UserLoginResponse login(UserLoginDto userLoginDto) {
-        Authentication authentication  = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(
-                userLoginDto.getUsername(),
-                userLoginDto.getPassword()
-        ));
+        Authentication authentication = authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(
+                        userLoginDto.getUsername(),
+                        userLoginDto.getPassword()
+                ));
 
         String accessToken = jwtService.generateToken(authentication.getName(), authentication.getAuthorities());
         return new UserLoginResponse(accessToken);
