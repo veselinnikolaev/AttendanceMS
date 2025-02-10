@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import me.veso.categoryservice.client.RabbitClient;
 import me.veso.categoryservice.dto.*;
 import me.veso.categoryservice.entity.Category;
+import me.veso.categoryservice.mapper.CategoryMapper;
 import me.veso.categoryservice.repository.CategoryRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,6 +19,7 @@ public class CategoryService {
     private final CategoryRepository categoryRepository;
     private final UserIdService userIdService;
     private final RabbitClient rabbitClient;
+    private final CategoryMapper categoryMapper;
 
     public CategoryDetailsDto createCategory(CategoryCreationDto categoryCreationDto) {
         log.info("Creating category with name: {}", categoryCreationDto.name());
@@ -38,7 +40,7 @@ public class CategoryService {
         rabbitClient.notifyUsersAssigned(usersAssignedEvent);
         log.info("Users assigned event notified for category ID: {}", categorySaved.getId());
 
-        return new CategoryDetailsDto(categorySaved);
+        return categoryMapper.toCategoryDetailsDto(categorySaved);
     }
 
     public CategoryDetailsDto updateCategory(String id, CategoryUpdateDto categoryUpdateDto) {
@@ -64,7 +66,7 @@ public class CategoryService {
         rabbitClient.notifyUsersAssigned(usersAssignedEvent);
         log.info("Users assigned event notified for category ID: {}", id);
 
-        return new CategoryDetailsDto(categoryRepository.save(existingCategory));
+        return categoryMapper.toCategoryDetailsDto(categoryRepository.save(existingCategory));
     }
 
     public void deleteCategory(String id) {
@@ -97,7 +99,7 @@ public class CategoryService {
         rabbitClient.notifyUsersAssigned(usersAssignedEvent);
         log.info("Users assigned event notified for category ID: {}", id);
 
-        return new CategoryDetailsDto(categoryRepository.save(category));
+        return categoryMapper.toCategoryDetailsDto(categoryRepository.save(category));
     }
 
     public CategoryDetailsDto getCategory(String id) {
@@ -109,6 +111,6 @@ public class CategoryService {
         });
 
         log.info("Category with ID {} fetched", id);
-        return new CategoryDetailsDto(category);
+        return categoryMapper.toCategoryDetailsDto(category);
     }
 }

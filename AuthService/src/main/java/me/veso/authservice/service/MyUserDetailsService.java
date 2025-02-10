@@ -37,11 +37,11 @@ public class MyUserDetailsService implements UserDetailsService {
                     if (user == null) {
                         throw new UsernameNotFoundException("User not found with username: " + username);
                     }
-                    if (!"approved".equalsIgnoreCase(user.getStatus())) {
+                    if (!"approved".equalsIgnoreCase(user.status())) {
                         throw new UsernameNotFoundException("User is not approved for login: " + username);
                     }
-                    return new User(user.getUsername(), user.getPasswordHash(),
-                            Stream.of(user.getRole())
+                    return new User(user.username(), user.passwordHash(),
+                            Stream.of(user.role())
                                     .map(role -> new SimpleGrantedAuthority("ROLE_" + role))
                                     .collect(Collectors.toList()));
                 });

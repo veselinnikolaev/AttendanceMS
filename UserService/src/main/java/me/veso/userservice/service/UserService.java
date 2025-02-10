@@ -8,6 +8,7 @@ import me.veso.userservice.dto.UserDetailsDto;
 import me.veso.userservice.dto.UserRegisterDto;
 import me.veso.userservice.dto.UserStatusDto;
 import me.veso.userservice.entity.User;
+import me.veso.userservice.mapper.UserMapper;
 import me.veso.userservice.repository.UserRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -23,6 +24,7 @@ public class UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder encoder;
     private final RabbitClient rabbitClient;
+    private final UserMapper userMapper;
 
     public UserDetailsDto register(UserRegisterDto userRegisterDto) {
         log.debug("Attempting to register user: {}", userRegisterDto.username());
@@ -49,7 +51,7 @@ public class UserService {
                 .setStatus("pending");
 
         log.info("New user registered: {}", userRegisterDto.username());
-        return new UserDetailsDto(userRepository.save(user));
+        return userMapper.toUserDetailsDto(userRepository.save(user));
     }
 
     @Transactional
@@ -69,13 +71,13 @@ public class UserService {
         log.debug("Fetching all users");
         return userRepository.findAll()
                 .stream()
-                .map(UserDetailsDto::new)
+                .map(userMapper::toUserDetailsDto)
                 .toList();
     }
 
     public UserDetailsDto getUser(Long id) {
         log.debug("Fetching user with ID {}", id);
-        return new UserDetailsDto(userRepository.findById(id)
+        return userMapper.toUserDetailsDto(userRepository.findById(id)
                 .orElseThrow(() -> {
                     log.warn("User with ID {} not found", id);
                     return new RuntimeException("User with ID " + id + " not found");
@@ -86,13 +88,13 @@ public class UserService {
         log.debug("Fetching all users with status: {}", status);
         return userRepository.findAllByStatus(status)
                 .stream()
-                .map(UserDetailsDto::new)
+                .map(userMapper::toUserDetailsDto)
                 .collect(Collectors.toList());
     }
 
     public UserDetailsDto getUserByUsername(String username) {
         log.debug("Fetching user with username: {}", username);
-        return new UserDetailsDto(userRepository
+        return userMapper.toUserDetailsDto(userRepository
                 .findByUsername(username)
                 .orElseThrow(() -> {
                     log.warn("User with username {} not found", username);
@@ -122,7 +124,7 @@ public class UserService {
         log.debug("Fetching users by IDs: {}", ids);
         return userRepository.findAllByIdIn(ids)
                 .stream()
-                .map(UserDetailsDto::new)
+                .map(userMapper::toUserDetailsDto)
                 .collect(Collectors.toList());
     }
 

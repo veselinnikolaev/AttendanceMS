@@ -8,6 +8,7 @@ import me.veso.attendanceservice.dto.AttendanceDetailsDto;
 import me.veso.attendanceservice.entity.Attendance;
 import me.veso.attendanceservice.entity.CategoryId;
 import me.veso.attendanceservice.entity.UserId;
+import me.veso.attendanceservice.mapper.AttendanceMapper;
 import me.veso.attendanceservice.repository.AttendanceRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,6 +23,7 @@ public class AttendanceService {
     private final UserIdService userIdService;
     private final CategoryIdService categoryService;
     private final RabbitClient rabbitClient;
+    private final AttendanceMapper attendanceMapper;
 
     public AttendanceDetailsDto createAttendance(AttendanceCreationDto attendanceCreationDto) {
         log.info("Creating attendance for user ID {} in category ID {}", attendanceCreationDto.userId(), attendanceCreationDto.categoryId());
@@ -36,7 +38,7 @@ public class AttendanceService {
 
         Attendance attendanceSaved = attendanceRepository.save(attendance);
 
-        AttendanceDetailsDto attendanceDetailsDto = new AttendanceDetailsDto(attendanceSaved);
+        AttendanceDetailsDto attendanceDetailsDto = attendanceMapper.toAttendanceDetailsDto(attendanceSaved);
         rabbitClient.notifyAssigmentCreated(attendanceDetailsDto);
 
         log.info("Attendance created successfully for user ID {} in category ID {}", attendanceCreationDto.userId(), attendanceCreationDto.categoryId());
@@ -48,7 +50,7 @@ public class AttendanceService {
 
         List<AttendanceDetailsDto> attendanceDetails = attendanceRepository.findAllByCategory_CategoryId(categoryId)
                 .stream()
-                .map(AttendanceDetailsDto::new)
+                .map(attendanceMapper::toAttendanceDetailsDto)
                 .toList();
 
         log.info("Found {} attendance records for category ID {}", attendanceDetails.size(), categoryId);
@@ -60,7 +62,7 @@ public class AttendanceService {
 
         List<AttendanceDetailsDto> attendanceDetails = attendanceRepository.findAllByUser_UserId(userId)
                 .stream()
-                .map(AttendanceDetailsDto::new)
+                .map(attendanceMapper::toAttendanceDetailsDto)
                 .toList();
 
         log.info("Found {} attendance records for user ID {}", attendanceDetails.size(), userId);

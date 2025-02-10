@@ -56,8 +56,8 @@ public class AuthService {
     public UserLoginResponse login(UserLoginDto userLoginDto) {
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
-                        userLoginDto.getUsername(),
-                        userLoginDto.getPassword()
+                        userLoginDto.username(),
+                        userLoginDto.password()
                 ));
 
         String accessToken = jwtService.generateToken(authentication.getName(), authentication.getAuthorities());
