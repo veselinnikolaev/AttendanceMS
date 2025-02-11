@@ -10,6 +10,10 @@ import me.veso.userservice.dto.UserStatusDto;
 import me.veso.userservice.entity.User;
 import me.veso.userservice.mapper.UserMapper;
 import me.veso.userservice.repository.UserRepository;
+import org.springframework.cache.CacheManager;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -25,7 +29,9 @@ public class UserService {
     private final PasswordEncoder encoder;
     private final RabbitClient rabbitClient;
     private final UserMapper userMapper;
+    private final CacheManager cacheManager;
 
+    @CachePut(value = "users", key = "#result.id()")
     public UserDetailsDto register(UserRegisterDto userRegisterDto) {
         log.debug("Attempting to register user: {}", userRegisterDto.username());
 
@@ -67,6 +73,7 @@ public class UserService {
         return userStatusDto;
     }
 
+    @Cacheable(value = "users", key = "'all'")
     public List<UserDetailsDto> getAllUsers() {
         log.debug("Fetching all users");
         return userRepository.findAll()
@@ -75,6 +82,7 @@ public class UserService {
                 .toList();
     }
 
+    @Cacheable(value = "users", key = "#id")
     public UserDetailsDto getUser(Long id) {
         log.debug("Fetching user with ID {}", id);
         return userMapper.toUserDetailsDto(userRepository.findById(id)
@@ -84,6 +92,7 @@ public class UserService {
                 }));
     }
 
+    @Cacheable(value = "usersByStatus", key = "#status")
     public List<UserDetailsDto> getAllUsersByStatus(String status) {
         log.debug("Fetching all users with status: {}", status);
         return userRepository.findAllByStatus(status)
@@ -128,19 +137,27 @@ public class UserService {
                 .collect(Collectors.toList());
     }
 
+    @Cacheable(value = "users", key = "#userIds")
     public List<User> findAllByIdIn(List<Long> userIds) {
         log.debug("Fetching all users by ID list: {}", userIds);
         return userRepository.findAllByIdIn(userIds);
     }
 
+    @CacheEvict(value = "users", allEntries = true)
     public void saveAll(List<User> users) {
         log.debug("Saving list of users. Count: {}", users.size());
         userRepository.saveAll(users);
         log.info("Successfully saved {} users", users.size());
     }
 
+    @Cacheable(value = "usersByCategory", key = "#id")
     public List<User> findAllByCategoryId(String id) {
         log.debug("Fetching all users by category ID: {}", id);
         return userRepository.findAllByCategoryId(id);
+    }
+
+    @Cacheable(value = "users", key = "'all'")
+    public List<User> getAll(){
+        return userRepository.findAll();
     }
 }
