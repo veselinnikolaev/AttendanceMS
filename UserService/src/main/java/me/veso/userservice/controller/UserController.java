@@ -44,7 +44,7 @@ public class UserController {
             @Pattern(regexp = "^(approved|denied|pending)$", message = "Status must be either approved, denied or pending")
             @RequestParam(value = "status", required = false) String status) {
         List<UserDetailsDto> users = (status == null)
-                ? userService.getAllUsers()
+                ? userService.getAllUsersDetails()
                 : userService.getAllUsersByStatus(status);
         return ResponseEntity.ok(users);
     }
@@ -59,14 +59,14 @@ public class UserController {
     @Validated
     public ResponseEntity<UserDetailsDto> getUser(
             @Positive(message = "User id must be positive") @PathVariable("id") Long id) {
-        return ResponseEntity.ok(userService.getUser(id));
+        return ResponseEntity.ok(userService.getUserDetailsById(id));
     }
 
     @GetMapping("/{username}")
     @Validated
     public ResponseEntity<UserDetailsDto> getUserByUsername(
             @NotBlank(message = "Username must not be blank") @PathVariable("username") String username) {
-        return ResponseEntity.ok(userService.getUserByUsername(username));
+        return ResponseEntity.ok(userService.getUserDetailsByUsername(username));
     }
 
     @GetMapping("/{id}/status")

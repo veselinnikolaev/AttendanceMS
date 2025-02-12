@@ -36,7 +36,7 @@ public class CategoryDeletedListener {
             log.info("Successfully updated {} users after category {} deletion.", users.size(), id);
         }
 
-        categoryService.delete(category);
+        categoryService.delete(id);
         log.info("Successfully deleted category with ID: {}", id);
     }
 }

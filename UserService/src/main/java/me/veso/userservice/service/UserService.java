@@ -10,15 +10,14 @@ import me.veso.userservice.dto.UserStatusDto;
 import me.veso.userservice.entity.User;
 import me.veso.userservice.mapper.UserMapper;
 import me.veso.userservice.repository.UserRepository;
-import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -29,9 +28,8 @@ public class UserService {
     private final PasswordEncoder encoder;
     private final RabbitClient rabbitClient;
     private final UserMapper userMapper;
-    private final CacheManager cacheManager;
+    private final UserService self;
 
-    @CachePut(value = "users", key = "#result.id()")
     public UserDetailsDto register(UserRegisterDto userRegisterDto) {
         log.debug("Attempting to register user: {}", userRegisterDto.username());
 
@@ -57,14 +55,13 @@ public class UserService {
                 .setStatus("pending");
 
         log.info("New user registered: {}", userRegisterDto.username());
-        return userMapper.toUserDetailsDto(userRepository.save(user));
+        return userMapper.toUserDetailsDto(self.saveUser(user));
     }
 
-    @Transactional
     public UserStatusDto validateRegistration(Long id, String status) {
         log.debug("Validating user with ID {} with status {}", id, status);
 
-        userRepository.updateStatus(id, status, LocalDateTime.now());
+        self.updateStatusOfUser(status, id);
 
         UserStatusDto userStatusDto = new UserStatusDto(id, status);
         rabbitClient.notifyStatusUpdated(userStatusDto);
@@ -73,57 +70,54 @@ public class UserService {
         return userStatusDto;
     }
 
-    @Cacheable(value = "users", key = "'all'")
-    public List<UserDetailsDto> getAllUsers() {
+    public List<UserDetailsDto> getAllUsersDetails() {
         log.debug("Fetching all users");
-        return userRepository.findAll()
+        return self.getAllUsers()
                 .stream()
                 .map(userMapper::toUserDetailsDto)
                 .toList();
     }
 
-    @Cacheable(value = "users", key = "#id")
-    public UserDetailsDto getUser(Long id) {
+    public UserDetailsDto getUserDetailsById(Long id) {
         log.debug("Fetching user with ID {}", id);
-        return userMapper.toUserDetailsDto(userRepository.findById(id)
+        User user = self.getUserById(id)
                 .orElseThrow(() -> {
                     log.warn("User with ID {} not found", id);
                     return new RuntimeException("User with ID " + id + " not found");
-                }));
+                });
+        return userMapper.toUserDetailsDto(user);
     }
 
-    @Cacheable(value = "usersByStatus", key = "#status")
     public List<UserDetailsDto> getAllUsersByStatus(String status) {
         log.debug("Fetching all users with status: {}", status);
-        return userRepository.findAllByStatus(status)
+        return self.getUsersByStatus(status)
                 .stream()
                 .map(userMapper::toUserDetailsDto)
                 .collect(Collectors.toList());
     }
 
-    public UserDetailsDto getUserByUsername(String username) {
+    public UserDetailsDto getUserDetailsByUsername(String username) {
         log.debug("Fetching user with username: {}", username);
-        return userMapper.toUserDetailsDto(userRepository
-                .findByUsername(username)
+        User user = self.getUserByUsername(username)
                 .orElseThrow(() -> {
                     log.warn("User with username {} not found", username);
                     return new RuntimeException("User with username " + username + " not found");
-                }));
+                });
+        return userMapper.toUserDetailsDto(user);
     }
 
     public String getStatusById(Long id) {
         log.debug("Fetching status for user with ID {}", id);
-        return userRepository.findById(id)
+        return self.getUserById(id)
                 .orElseThrow(() -> {
                     log.warn("User with ID {} not found", id);
                     return new RuntimeException("User with ID " + id + " not found");
-                })
-                .getStatus();
+                }).getStatus();
     }
 
     public List<String> getStatusesByIds(List<Long> ids) {
         log.debug("Fetching statuses for user IDs: {}", ids);
-        return userRepository.findAllByIdIn(ids)
+        return self.findAllByIdIn(ids)
                 .stream()
                 .map(User::getStatus)
                 .collect(Collectors.toList());
@@ -131,19 +125,20 @@ public class UserService {
 
     public List<UserDetailsDto> getUsersByIds(List<Long> ids) {
         log.debug("Fetching users by IDs: {}", ids);
-        return userRepository.findAllByIdIn(ids)
+        return self.findAllByIdIn(ids)
                 .stream()
                 .map(userMapper::toUserDetailsDto)
                 .collect(Collectors.toList());
     }
 
-    @Cacheable(value = "users", key = "#userIds")
+    @Cacheable(value = "usersByIds", key = "#userIds.hashCode()")
     public List<User> findAllByIdIn(List<Long> userIds) {
         log.debug("Fetching all users by ID list: {}", userIds);
         return userRepository.findAllByIdIn(userIds);
     }
 
-    @CacheEvict(value = "users", allEntries = true)
+    @CacheEvict(value = {"users", "usersByIds", "usersByCategory", "usersById", "usersByUsername"}, allEntries = true)
+    @Transactional
     public void saveAll(List<User> users) {
         log.debug("Saving list of users. Count: {}", users.size());
         userRepository.saveAll(users);
@@ -157,7 +152,35 @@ public class UserService {
     }
 
     @Cacheable(value = "users", key = "'all'")
-    public List<User> getAll(){
+    public List<User> getAllUsers() {
+        log.debug("Fetching all users from the database (cache miss).");
         return userRepository.findAll();
+    }
+
+    @Cacheable(value = "usersById", key = "#id")
+    public Optional<User> getUserById(Long id) {
+        return userRepository.findById(id);
+    }
+
+    @Cacheable(value = "usersByUsername", key = "#username")
+    public Optional<User> getUserByUsername(String username) {
+        return userRepository.findByUsername(username);
+    }
+
+    @Cacheable(value = "usersByStatus", key = "#status")
+    public List<User> getUsersByStatus(String status) {
+        return userRepository.findAllByStatus(status);
+    }
+
+    @CacheEvict(value = {"users", "usersByIds", "usersByCategory", "usersById", "usersByUsername"}, allEntries = true)
+    @Transactional
+    public void updateStatusOfUser(String status, Long userId) {
+        userRepository.updateStatus(userId, status, LocalDateTime.now());
+    }
+
+    @CacheEvict(value = {"users", "usersByIds", "usersByCategory", "usersById", "usersByUsername"}, allEntries = true)
+    @Transactional
+    public User saveUser(User user) {
+        return userRepository.save(user);
     }
 }
