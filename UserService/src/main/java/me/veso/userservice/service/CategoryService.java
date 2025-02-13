@@ -19,6 +19,19 @@ import java.util.concurrent.ExecutionException;
 public class CategoryService {
     private final CategoryRepository repository;
     private final CategoryClient client;
+    private final CategoryService self;
+
+    @Transactional
+    public void delete(String categoryId) {
+        log.info("Deleting category with id {}", categoryId);
+        try {
+            self.findByCategoryId(categoryId);
+            repository.deleteByCategoryId(categoryId);
+            evictCategoryCache(categoryId);
+        } catch (Exception e) {
+            log.error("Category with id {} not found", categoryId);
+        }
+    }
 
     @Cacheable(value = "categoriesByCategoryId", key = "#categoryId")
     public CategoryId saveIfNotExists(String categoryId) {
@@ -57,9 +70,7 @@ public class CategoryService {
     }
 
     @CacheEvict(value = "categoriesByCategoryId", key = "#categoryId")
-    @Transactional
-    public void delete(String categoryId) {
-        log.info("Deleting category with id {}", categoryId);
-        repository.delete(categoryId);
+    public void evictCategoryCache(String categoryId) {
+        log.info("Evicting cache for category with id {}", categoryId);
     }
 }

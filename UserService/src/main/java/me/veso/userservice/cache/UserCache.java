@@ -1,4 +1,4 @@
-package me.veso.userservice.config;
+package me.veso.userservice.cache;
 
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
@@ -7,17 +7,17 @@ import me.veso.userservice.entity.User;
 import me.veso.userservice.repository.UserRepository;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-@Configuration
+@Component
 @RequiredArgsConstructor
-public class UserCacheConfig {
+public class UserCache {
 
     private final CacheManager cacheManager;
     private final UserRepository userRepository;
@@ -26,7 +26,7 @@ public class UserCacheConfig {
     public void preloadCache() {
         //"users", "usersByIds", "usersByCategory", "usersById", "usersByUsername"
         List<User> users = userRepository.findAll();
-        if(users.isEmpty()){
+        if (users.isEmpty()) {
             return;
         }
 
@@ -37,24 +37,29 @@ public class UserCacheConfig {
         Cache usersByUsernameCache = cacheManager.getCache("usersByUsername");
 
         if (usersCache != null) {
+            usersCache.clear();
             usersCache.put("all", users);
         }
 
         if (usersByIdsCache != null) {
+            usersByIdsCache.clear();
             usersByIdsCache.put(users.stream()
                     .map(User::getId)
                     .toList().hashCode(), users);
         }
 
         if (usersByIdCache != null) {
+            usersByIdCache.clear();
             users.forEach(user -> usersByIdCache.put(user.getId(), user));
         }
 
         if (usersByUsernameCache != null) {
+            usersByUsernameCache.clear();
             users.forEach(user -> usersByUsernameCache.put(user.getUsername(), user));
         }
 
         if (usersByCategoryCache != null) {
+            usersByCategoryCache.clear();
             Map<String, List<User>> usersByCategory = new HashMap<>();
 
             for (User user : users) {

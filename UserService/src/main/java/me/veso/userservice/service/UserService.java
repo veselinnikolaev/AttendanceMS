@@ -17,7 +17,6 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -80,11 +79,7 @@ public class UserService {
 
     public UserDetailsDto getUserDetailsById(Long id) {
         log.debug("Fetching user with ID {}", id);
-        User user = self.getUserById(id)
-                .orElseThrow(() -> {
-                    log.warn("User with ID {} not found", id);
-                    return new RuntimeException("User with ID " + id + " not found");
-                });
+        User user = self.getUserById(id);
         return userMapper.toUserDetailsDto(user);
     }
 
@@ -98,21 +93,14 @@ public class UserService {
 
     public UserDetailsDto getUserDetailsByUsername(String username) {
         log.debug("Fetching user with username: {}", username);
-        User user = self.getUserByUsername(username)
-                .orElseThrow(() -> {
-                    log.warn("User with username {} not found", username);
-                    return new RuntimeException("User with username " + username + " not found");
-                });
+        User user = self.getUserByUsername(username);
         return userMapper.toUserDetailsDto(user);
     }
 
     public String getStatusById(Long id) {
         log.debug("Fetching status for user with ID {}", id);
         return self.getUserById(id)
-                .orElseThrow(() -> {
-                    log.warn("User with ID {} not found", id);
-                    return new RuntimeException("User with ID " + id + " not found");
-                }).getStatus();
+                .getStatus();
     }
 
     public List<String> getStatusesByIds(List<Long> ids) {
@@ -131,18 +119,31 @@ public class UserService {
                 .collect(Collectors.toList());
     }
 
-    @Cacheable(value = "usersByIds", key = "#userIds.hashCode()")
-    public List<User> findAllByIdIn(List<Long> userIds) {
-        log.debug("Fetching all users by ID list: {}", userIds);
-        return userRepository.findAllByIdIn(userIds);
+    @Transactional
+    public void updateStatusOfUser(String status, Long userId) {
+        userRepository.updateStatus(userId, status, LocalDateTime.now());
+        self.updateUserCache();
     }
 
-    @CacheEvict(value = {"users", "usersByIds", "usersByCategory", "usersById", "usersByUsername"}, allEntries = true)
+    @Transactional
+    public User saveUser(User user) {
+        User savedUser = userRepository.save(user);
+        self.updateUserCache();
+        return savedUser;
+    }
+
     @Transactional
     public void saveAll(List<User> users) {
         log.debug("Saving list of users. Count: {}", users.size());
         userRepository.saveAll(users);
         log.info("Successfully saved {} users", users.size());
+        self.updateUserCache();
+    }
+
+    @Cacheable(value = "usersByIds", key = "#userIds.hashCode()")
+    public List<User> findAllByIdIn(List<Long> userIds) {
+        log.debug("Fetching all users by ID list: {}", userIds);
+        return userRepository.findAllByIdIn(userIds);
     }
 
     @Cacheable(value = "usersByCategory", key = "#id")
@@ -158,13 +159,19 @@ public class UserService {
     }
 
     @Cacheable(value = "usersById", key = "#id")
-    public Optional<User> getUserById(Long id) {
-        return userRepository.findById(id);
+    public User getUserById(Long id) {
+        return userRepository.findById(id).orElseThrow(() -> {
+            log.warn("User with ID {} not found", id);
+            return new RuntimeException("User with ID " + id + " not found");
+        });
     }
 
     @Cacheable(value = "usersByUsername", key = "#username")
-    public Optional<User> getUserByUsername(String username) {
-        return userRepository.findByUsername(username);
+    public User getUserByUsername(String username) {
+        return userRepository.findByUsername(username).orElseThrow(() -> {
+            log.warn("User with username {} not found", username);
+            return new RuntimeException("User with username " + username + " not found");
+        });
     }
 
     @Cacheable(value = "usersByStatus", key = "#status")
@@ -173,14 +180,7 @@ public class UserService {
     }
 
     @CacheEvict(value = {"users", "usersByIds", "usersByCategory", "usersById", "usersByUsername"}, allEntries = true)
-    @Transactional
-    public void updateStatusOfUser(String status, Long userId) {
-        userRepository.updateStatus(userId, status, LocalDateTime.now());
-    }
-
-    @CacheEvict(value = {"users", "usersByIds", "usersByCategory", "usersById", "usersByUsername"}, allEntries = true)
-    @Transactional
-    public User saveUser(User user) {
-        return userRepository.save(user);
+    public void updateUserCache() {
+        log.info("Evicting cache for users");
     }
 }

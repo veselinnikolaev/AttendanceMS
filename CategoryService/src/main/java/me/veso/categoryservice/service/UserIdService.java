@@ -5,7 +5,10 @@ import lombok.extern.slf4j.Slf4j;
 import me.veso.categoryservice.client.UserClient;
 import me.veso.categoryservice.entity.UserId;
 import me.veso.categoryservice.repository.UserIdRepository;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -22,6 +25,7 @@ import java.util.stream.IntStream;
 public class UserIdService {
     private final UserIdRepository userIdRepository;
     private final UserClient client;
+    private final UserIdService self;
 
     public UserId saveIdLongIfNotExists(Long id) {
         try {
@@ -32,12 +36,7 @@ public class UserIdService {
                             throw new RuntimeException("User is not approved, actual status " + status);
                         }
 
-                        return CompletableFuture.supplyAsync(() -> userIdRepository.findByUserId(id)
-                                .orElseGet(() -> {
-                                    log.info("Saving new user with id {}", id);
-                                    return userIdRepository.save(new UserId().setUserId(id));
-                                })
-                        );
+                        return CompletableFuture.supplyAsync(() -> self.saveIdIfNotExists(id));
                     }).exceptionally(ex -> {
                         log.error("Failed to fetch user status for ID {}: {}", id, ex.getMessage());
                         return null;
@@ -65,7 +64,7 @@ public class UserIdService {
                                 .mapToObj(ids::get)
                                 .collect(Collectors.toList());
 
-                        List<UserId> existingUserIds = userIdRepository.findAllByUserIdIn(approvedIds);
+                        List<UserId> existingUserIds = self.findAllByUserIdsIn(approvedIds);
                         Set<Long> existingIdSet = existingUserIds.stream()
                                 .map(UserId::getUserId)
                                 .collect(Collectors.toSet());
@@ -76,7 +75,7 @@ public class UserIdService {
                                 .collect(Collectors.toList());
 
                         if (!newUserIds.isEmpty()) {
-                            userIdRepository.saveAll(newUserIds);
+                            self.saveUserIds(newUserIds);
                         }
 
                         existingUserIds.addAll(newUserIds);
@@ -89,5 +88,30 @@ public class UserIdService {
         } catch (InterruptedException | ExecutionException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    @Cacheable(value = "usersByUserId", key = "#id")
+    public UserId saveIdIfNotExists(Long id) {
+        return userIdRepository.findByUserId(id)
+                .orElseGet(() -> {
+                    log.info("Saving new user with id {}", id);
+                    return userIdRepository.save(new UserId().setUserId(id));
+                });
+    }
+
+    @Cacheable(value = "usersByUserIds", key = "#userIds.hashCode()")
+    public List<UserId> findAllByUserIdsIn(List<Long> userIds){
+        return userIdRepository.findAllByUserIdIn(userIds);
+    }
+
+    @Transactional
+    public void saveUserIds(List<UserId> userIds) {
+        userIdRepository.saveAll(userIds);
+        self.evictUsersCache();
+    }
+
+    @CacheEvict(value = "usersByUserId", allEntries = true)
+    public void evictUsersCache() {
+        log.info("Evicting cache for users");
     }
 }

@@ -7,6 +7,9 @@ import me.veso.categoryservice.dto.*;
 import me.veso.categoryservice.entity.Category;
 import me.veso.categoryservice.mapper.CategoryMapper;
 import me.veso.categoryservice.repository.CategoryRepository;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,6 +23,7 @@ public class CategoryService {
     private final UserIdService userIdService;
     private final RabbitClient rabbitClient;
     private final CategoryMapper categoryMapper;
+    private final CategoryService self;
 
     public CategoryDetailsDto createCategory(CategoryCreationDto categoryCreationDto) {
         log.info("Creating category with name: {}", categoryCreationDto.name());
@@ -29,7 +33,7 @@ public class CategoryService {
                 .setChecker(userIdService.saveIdLongIfNotExists(categoryCreationDto.checkerId()))
                 .setAttendants(userIdService.saveIdsLongIfNotExist(categoryCreationDto.attendantsIds()));
 
-        Category categorySaved = categoryRepository.save(category);
+        Category categorySaved = self.saveCategory(category);
         log.info("Category created with ID: {}", categorySaved.getId());
 
         UsersAssignedEvent usersAssignedEvent = new UsersAssignedEvent(
@@ -46,11 +50,7 @@ public class CategoryService {
     public CategoryDetailsDto updateCategory(String id, CategoryUpdateDto categoryUpdateDto) {
         log.info("Updating category with ID: {}", id);
 
-        // Проверка дали категорията съществува
-        Category existingCategory = categoryRepository.findById(id).orElseThrow(() -> {
-            log.error("Category with ID {} not found", id);
-            return new RuntimeException("Category not found, ID " + id);
-        });
+        Category existingCategory = self.getCategoryById(id);
 
         existingCategory.setName(categoryUpdateDto.name());
         existingCategory.setChecker(userIdService.saveIdLongIfNotExists(categoryUpdateDto.checkerId()));
@@ -75,7 +75,7 @@ public class CategoryService {
         rabbitClient.notifyCategoryDeleted(new CategoryDeletedEvent(id));
         log.info("Category deleted event notified for category ID: {}", id);
 
-        categoryRepository.deleteById(id);
+        self.deleteCategoryById(id);
         log.info("Category with ID {} deleted", id);
     }
 
@@ -83,10 +83,7 @@ public class CategoryService {
     public CategoryDetailsDto assignAttendantsToCategory(String id, List<Long> attendantsIds) {
         log.info("Assigning attendants to category with ID: {}", id);
 
-        Category category = categoryRepository.findById(id).orElseThrow(() -> {
-            log.error("Category with ID {} not found", id);
-            return new RuntimeException("Category not found, ID " + id);
-        });
+        Category category = self.getCategoryById(id);
         category.addAttendants(userIdService.saveIdsLongIfNotExist(attendantsIds));
 
         log.info("Assigned attendants to category ID: {}", id);
@@ -99,18 +96,48 @@ public class CategoryService {
         rabbitClient.notifyUsersAssigned(usersAssignedEvent);
         log.info("Users assigned event notified for category ID: {}", id);
 
-        return categoryMapper.toCategoryDetailsDto(categoryRepository.save(category));
+        return categoryMapper.toCategoryDetailsDto(self.saveCategory(category));
     }
 
     public CategoryDetailsDto getCategory(String id) {
         log.info("Fetching details for category with ID: {}", id);
 
-        Category category = categoryRepository.findById(id).orElseThrow(() -> {
-            log.error("Category with ID {} not found", id);
-            return new RuntimeException("Category not found, ID " + id);
-        });
+        Category category = self.getCategoryById(id);
 
         log.info("Category with ID {} fetched", id);
         return categoryMapper.toCategoryDetailsDto(category);
+    }
+
+
+    @Transactional
+    public void deleteCategoryById(String id) {
+        categoryRepository.deleteById(id);
+        evictCategoryCache(id);
+    }
+
+    @Cacheable(value = "categoriesById", key = "#id")
+    public Category getCategoryById(String id) {
+        return categoryRepository.findById(id).orElseThrow(() -> {
+            log.error("Category with ID {} not found", id);
+            return new RuntimeException("Category not found, ID " + id);
+        });
+    }
+
+    @Transactional
+    public Category saveCategory(Category category) {
+        Category categoryEntity = categoryRepository.save(category);
+        self.putCategoryInCache(categoryEntity);
+        return categoryEntity;
+    }
+
+    @CachePut(value = "categoriesById", key = "#category.id")
+    public Category putCategoryInCache(Category category){
+        log.info("Saving category with ID: {}", category.getId());
+        return category;
+    }
+
+    @CacheEvict(value = "categoriesById", key = "#id")
+    public void evictCategoryCache(String id) {
+        log.info("Evicting cache for category with ID: {}", id);
     }
 }
