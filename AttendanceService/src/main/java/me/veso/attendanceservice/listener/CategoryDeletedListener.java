@@ -22,7 +22,7 @@ public class CategoryDeletedListener {
         log.info("Category deleted event caught");
         CategoryId category = categoryService.findByCategoryId(id);
 
-        categoryService.delete(category);
+        categoryService.delete(category.getCategoryId());
 
         attendanceService.deleteByCategoryId(id);
 

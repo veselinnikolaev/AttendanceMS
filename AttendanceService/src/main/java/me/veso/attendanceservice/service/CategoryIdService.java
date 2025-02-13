@@ -5,7 +5,11 @@ import lombok.extern.slf4j.Slf4j;
 import me.veso.attendanceservice.client.CategoryClient;
 import me.veso.attendanceservice.entity.CategoryId;
 import me.veso.attendanceservice.repository.CategoryIdRepository;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -16,6 +20,7 @@ import java.util.concurrent.ExecutionException;
 public class CategoryIdService {
     private final CategoryIdRepository categoryIdRepository;
     private final CategoryClient client;
+    private final CategoryIdService self;
 
     public CategoryId saveIdLongIfNotExists(String id) {
         log.info("Checking if category with ID {} exists.", id);
@@ -30,11 +35,7 @@ public class CategoryIdService {
 
                         log.info("Category with ID {} found, processing the ID.", id);
 
-                        return CompletableFuture.supplyAsync(() -> categoryIdRepository.findByCategoryId(id)
-                                .orElseGet(() -> {
-                                    log.info("Category ID {} does not exist in the repository. Saving it.", id);
-                                    return categoryIdRepository.save(new CategoryId().setCategoryId(id));
-                                }));
+                        return CompletableFuture.supplyAsync(() -> self.getOrSaveIfNotExistsByCategoryId(id));
                     }).exceptionally(ex -> {
                         log.error("Failed to fetch category for ID {}: {}", id, ex.getMessage());
                         return null;
@@ -54,9 +55,37 @@ public class CategoryIdService {
                 });
     }
 
-    public void delete(CategoryId category) {
-        log.info("Deleting category with ID {} from repository.", category.getCategoryId());
-        categoryIdRepository.delete(category);
-        log.info("Category with ID {} deleted successfully.", category.getCategoryId());
+    @Transactional
+    public void delete(String categoryId) {
+        log.info("Deleting category with ID {} from repository.", categoryId);
+        categoryIdRepository.deleteByCategoryId(categoryId);
+        log.info("Category with ID {} deleted successfully.", categoryId);
+        self.evictFromCache(categoryId);
+    }
+
+    @Transactional
+    public CategoryId saveCategory(String categoryId){
+        CategoryId saved = categoryIdRepository.save(new CategoryId().setCategoryId(categoryId));
+        return self.putCategoryInCache(saved);
+    }
+
+    @Cacheable(value = "categoriesByCategoryId", key = "#categoryId")
+    public CategoryId getOrSaveIfNotExistsByCategoryId(String categoryId){
+        return categoryIdRepository.findByCategoryId(categoryId)
+                .orElseGet(() -> {
+                    log.info("Category ID {} does not exist in the repository. Saving it.", categoryId);
+                    return self.saveCategory(categoryId);
+                });
+    }
+
+    @CachePut(value = "categoriesByCategoryId", key = "#categoryId.categoryId")
+    public CategoryId putCategoryInCache(CategoryId categoryId){
+        log.info("Category with category id {} put in cache", categoryId.getCategoryId());
+        return categoryId;
+    }
+
+    @CacheEvict(value = "categoriesByCategoryId", key = "#categoryId")
+    public void evictFromCache(String categoryId){
+        log.info("Category with category id {} evicted from cache", categoryId);
     }
 }
