@@ -40,19 +40,19 @@ The system consists of multiple microservices, each responsible for a specific f
 
 ### 3. Auth Service
 - **Database:** Redis
-- **Function:** Manages user authentication and authorization, issuing JWT tokens stored in Redis for session management.
+- **Function:** Handles user authentication, including validating login credentials, generating JWT tokens, and storing session data in Redis. The Auth Service interacts with the User Service to verify user existence during the login process.
 
 ### 4. User Service
 - **Database:** PostgreSQL
-- **Function:** Handles user-related operations and data management.
+- **Function:** Manages user registration, profile updates, and other user-related operations. It ensures that all user information is securely stored and easily accessible.
 
 ### 5. Attendance Service
 - **Database:** MySQL
-- **Function:** Manages attendance records, tracking, and validation.
+- **Function:** Manages attendance records, tracking, and validation for courses and classes.
 
 ### 6. Category Service
 - **Database:** MongoDB
-- **Function:** Manages course categories and related metadata.
+- **Function:** Manages abstract courses and related metadata.
 
 ### 7. Notification Service
 - **Function:** Sends email notifications using JavaMailSender configured with Mailtrap SMTP server.
@@ -107,7 +107,7 @@ AttendanceMS/
 ## Usage
 Once all services are running:
 
-- **User Registration and Authentication:** Users can register and authenticate through the Auth Service endpoints.
+- **User Registration and Authentication:** Users can register through the User Service endpoints. During login, the Auth Service handles authentication by verifying credentials and generating JWT tokens. The Auth Service calls the User Service to validate the existence of the user.
 - **Attendance Management:** Authorized users can record and view attendance via the Attendance Service.
 - **Category Management:** Manage course categories through the Category Service.
 - **Notifications:** The Notification Service will handle sending emails for relevant events.
@@ -123,8 +123,11 @@ To run tests for each microservice:
 Ensure that all dependent services are running before executing tests.
 
 ## Design Patterns Implemented
+- **API Gateway Pattern:** API Gateway acts as a single entry point, routing requests to appropriate microservices and handling authentication and load balancing.
+- **Service Discovery Pattern:** Netflix Eureka provides service discovery, allowing microservices to find and communicate with each other dynamically.
 - **Saga Pattern (Planned):** To manage distributed transactions ensuring data consistency across services.
 - **Circuit Breaker Pattern (Planned):** To handle fault tolerance and prevent cascading failures.
+- **Event-Driven Architecture:** Uses RabbitMQ for asynchronous communication between microservices.
 
 ## Future Enhancements
 - Implement Saga and Circuit Breaker Patterns to enhance reliability and consistency in distributed environments.
