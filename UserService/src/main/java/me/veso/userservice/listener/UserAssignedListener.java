@@ -16,7 +16,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @Component
-@RabbitListener(queues = "users.assigning.queue")
+@RabbitListener(queues = "users.assigned.queue")
 @RequiredArgsConstructor
 @Slf4j
 public class UserAssignedListener {

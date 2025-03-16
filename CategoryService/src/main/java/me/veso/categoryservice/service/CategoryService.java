@@ -10,6 +10,10 @@ import me.veso.categoryservice.repository.CategoryRepository;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,6 +23,7 @@ import java.util.List;
 @RequiredArgsConstructor
 @Slf4j
 public class CategoryService {
+    private final MongoTemplate mongoTemplate;
     private final CategoryRepository categoryRepository;
     private final UserIdService userIdService;
     private final RabbitClient rabbitClient;
@@ -139,5 +144,15 @@ public class CategoryService {
     @CacheEvict(value = "categoriesById", key = "#id")
     public void evictCategoryCache(String id) {
         log.info("Evicting cache for category with ID: {}", id);
+    }
+
+    public void undeleteCategoryById(String id) {
+        Query query = new Query();
+        query.addCriteria(Criteria.where("_id").is(id));
+
+        Update update = new Update();
+        update.set("deleted", false);
+
+        mongoTemplate.updateFirst(query, update, Category.class);
     }
 }

@@ -13,7 +13,7 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 @Component
-@RabbitListener(queues = "attendance.created.queue")
+@RabbitListener(queues = "notify.attendance.created.queue")
 @RequiredArgsConstructor
 @Slf4j
 public class AttendanceCreatedListener {

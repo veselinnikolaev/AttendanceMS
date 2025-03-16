@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -16,6 +17,7 @@ public interface AttendanceRepository extends JpaRepository<Attendance, Long> {
     List<Attendance> findAllByUser_UserId(Long userId);
 
     @Modifying
-    @Query("DELETE FROM Attendance a WHERE a.category.categoryId = :categoryId")
+    @Transactional
+    @Query("UPDATE Attendance a SET a.deleted = true WHERE a.category.categoryId = :categoryId")
     void deleteAllByCategoryId(@Param("categoryId") String categoryId);
 }

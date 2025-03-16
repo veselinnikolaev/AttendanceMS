@@ -12,7 +12,7 @@ import org.springframework.stereotype.Component;
 import java.util.concurrent.CompletableFuture;
 
 @Component
-@RabbitListener(queues = "status.updated.queue")
+@RabbitListener(queues = "notify.status.updated.queue")
 @RequiredArgsConstructor
 @Slf4j
 public class StatusUpdatedListener {
