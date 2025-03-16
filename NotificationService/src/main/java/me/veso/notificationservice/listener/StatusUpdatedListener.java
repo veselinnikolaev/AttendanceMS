@@ -21,10 +21,10 @@ public class StatusUpdatedListener {
 
     @RabbitHandler
     public void handleStatusUpdated(UserStatusDto userStatusDto) {
-        CompletableFuture.supplyAsync(() -> client.getUserForId(userStatusDto.id()))
+        CompletableFuture.supplyAsync(() -> client.getUserForId(userStatusDto.userId()))
                 .thenAccept(user -> {
                     if (user == null) {
-                        log.warn("Skipping email notification for user ID {}, user not found.", userStatusDto.id());
+                        log.warn("Skipping email notification for user ID {}, user not found.", userStatusDto.userId());
                         return;
                     }
 
@@ -35,7 +35,7 @@ public class StatusUpdatedListener {
                                     Current status: %s.
                                     """, user.username(), userStatusDto.status()));
                 }).exceptionally(ex -> {
-                    log.error("Failed to fetch user details for ID {}: {}", userStatusDto.id(), ex.getMessage());
+                    log.error("Failed to fetch user details for ID {}: {}", userStatusDto.userId(), ex.getMessage());
                     return null;
                 });
     }

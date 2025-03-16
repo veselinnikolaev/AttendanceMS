@@ -2,6 +2,8 @@ package me.veso.attendanceservice.listener;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import me.veso.attendanceservice.client.RabbitClient;
+import me.veso.attendanceservice.dto.CategoryDeletionErrorDto;
 import me.veso.attendanceservice.entity.CategoryId;
 import me.veso.attendanceservice.service.AttendanceService;
 import me.veso.attendanceservice.service.CategoryIdService;
@@ -14,18 +16,23 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 @Slf4j
 public class CategoryDeletedListener {
+    private final RabbitClient rabbitClient;
     private final CategoryIdService categoryService;
     private final AttendanceService attendanceService;
 
     @RabbitHandler
     public void handleDeletedCategory(String id){
         log.info("Category deleted event caught");
-        CategoryId category = categoryService.findByCategoryId(id);
+        try {
+            CategoryId category = categoryService.findByCategoryId(id);
 
-        categoryService.delete(category.getCategoryId());
+            categoryService.delete(category.getCategoryId());
 
-        attendanceService.deleteByCategoryId(id);
+            attendanceService.deleteByCategoryId(id);
 
-        log.info("Category successfully deleted, id " + id);
+            log.info("Category successfully deleted, id " + id);
+        } catch (Exception ex){
+            rabbitClient.notifyDeletionError(new CategoryDeletionErrorDto(id, ex.getMessage()));
+        }
     }
 }
