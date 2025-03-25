@@ -21,9 +21,6 @@ spring:
   rabbitmq:
     username: myuser
     password: secret
-  docker:
-    compose:
-      file: CategoryService\compose.yaml
 
 eureka:
   client:

@@ -21,6 +21,6 @@ public class UserClient {
     }
 
     public ResponseEntity<UserDetailsDto[]> getUsersForIds(List<Long> usersIds) {
-        return restTemplate.postForEntity(userServiceUrl, usersIds, UserDetailsDto[].class);
+        return restTemplate.postForEntity(userServiceUrl + "?size=all", usersIds, UserDetailsDto[].class);
     }
 }

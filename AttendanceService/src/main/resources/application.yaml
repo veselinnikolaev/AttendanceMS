@@ -30,9 +30,6 @@ spring:
   rabbitmq:
     password: secret
     username: myuser
-  docker:
-    compose:
-      file: AttendanceService\compose.yaml
 
 eureka:
   client:

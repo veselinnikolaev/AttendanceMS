@@ -10,6 +10,8 @@ import me.veso.userservice.dto.UserDetailsDto;
 import me.veso.userservice.dto.UserRegisterDto;
 import me.veso.userservice.dto.UserStatusDto;
 import me.veso.userservice.service.UserService;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -39,20 +41,40 @@ public class UserController {
 
     @GetMapping
     @Validated
-    public ResponseEntity<List<UserDetailsDto>> getAllUsers(
+    public ResponseEntity<?> getUsers(
             @Nullable
             @Pattern(regexp = "^(approved|denied|pending)$", message = "Status must be either approved, denied or pending")
-            @RequestParam(value = "status", required = false) String status) {
-        List<UserDetailsDto> users = (status == null)
-                ? userService.getAllUsersDetails()
-                : userService.getAllUsersByStatus(status);
-        return ResponseEntity.ok(users);
+            @RequestParam(value = "status", required = false, defaultValue = "all") String status,
+            @RequestParam(value = "page", required = false, defaultValue = "0") int page,
+            @RequestParam(value = "size", required = false, defaultValue = "10") String sizeParam) {
+        ResponseEntity<?> response;
+        if (!"all".equalsIgnoreCase(status)) {
+            response = ResponseEntity.ok(userService.getAllUsersByStatus(status));
+        } else if ("all".equalsIgnoreCase(sizeParam)) {
+            response = ResponseEntity.ok(userService.getAllUsersDetails());
+        } else {
+            int size = Integer.parseInt(sizeParam);
+            Pageable pageable = PageRequest.of(page, size);
+            response = ResponseEntity.ok(userService.getUsersDetailsPageable(pageable));
+        }
+        return response;
     }
 
     @PostMapping
     @Validated
-    public ResponseEntity<List<UserDetailsDto>> getUsersByIds(@RequestBody List<@Positive(message = "User id must be positive") Long> ids){
-        return ResponseEntity.ok(userService.getUsersByIds(ids));
+    public ResponseEntity<?> getUsersByIds(@RequestBody List<@Positive(message = "User id must be positive") Long> ids,
+                                           @RequestParam(value = "page", required = false, defaultValue = "0") int page,
+                                           @RequestParam(value = "size", required = false, defaultValue = "10") String sizeParam) {
+        ResponseEntity<?> response;
+        if ("all".equalsIgnoreCase(sizeParam)) {
+            response = ResponseEntity.ok(userService.getUsersByIds(ids));
+        } else {
+            int size = Integer.parseInt(sizeParam);
+            Pageable pageable = PageRequest.of(page, size);
+            response = ResponseEntity.ok(userService.getUsersDetailsByIdsPageable(ids, pageable));
+        }
+
+        return response;
     }
 
     @GetMapping("/{id}")
@@ -71,13 +93,24 @@ public class UserController {
 
     @GetMapping("/{id}/status")
     @Validated
-    public ResponseEntity<String> getStatusById(@Positive(message = "User id must be positive") @PathVariable("id") Long id){
-      return ResponseEntity.ok(userService.getStatusById(id));
+    public ResponseEntity<String> getStatusById(@Positive(message = "User id must be positive") @PathVariable("id") Long id) {
+        return ResponseEntity.ok(userService.getStatusById(id));
     }
 
     @PostMapping("/status")
     @Validated
-    public ResponseEntity<List<String>> getStatusesByIds(@RequestBody List<@Positive(message = "User id must be positive") Long> ids){
-        return ResponseEntity.ok(userService.getStatusesByIds(ids));
+    public ResponseEntity<?> getStatusesByIds(@RequestBody List<@Positive(message = "User id must be positive") Long> ids,
+                                              @RequestParam(value = "page", required = false, defaultValue = "0") int page,
+                                              @RequestParam(value = "size", required = false, defaultValue = "10") String sizeParam) {
+        ResponseEntity<?> response;
+        if ("all".equalsIgnoreCase(sizeParam)) {
+            response = ResponseEntity.ok(userService.getStatusesByIds(ids));
+        } else {
+            int size = Integer.parseInt(sizeParam);
+            Pageable pageable = PageRequest.of(page, size);
+            response = ResponseEntity.ok(userService.getStatusesByIdsPageable(ids, pageable));
+        }
+
+        return response;
     }
 }

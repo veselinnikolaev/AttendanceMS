@@ -9,9 +9,12 @@ import me.veso.userservice.dto.UserRegisterDto;
 import me.veso.userservice.dto.UserStatusDto;
 import me.veso.userservice.entity.User;
 import me.veso.userservice.mapper.UserMapper;
+import me.veso.userservice.repository.UserPagingRepository;
 import me.veso.userservice.repository.UserRepository;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -27,6 +30,7 @@ public class UserService {
     private final PasswordEncoder encoder;
     private final RabbitClient rabbitClient;
     private final UserMapper userMapper;
+    private final UserPagingRepository userPagingRepository;
     private final UserService self;
 
     public UserDetailsDto register(UserRegisterDto userRegisterDto) {
@@ -182,5 +186,20 @@ public class UserService {
     @CacheEvict(value = {"users", "usersByIds", "usersByCategory", "usersById", "usersByUsername"}, allEntries = true)
     public void updateUserCache() {
         log.info("Evicting cache for users");
+    }
+
+    public Page<UserDetailsDto> getUsersDetailsPageable(Pageable pageable) {
+        return userPagingRepository.findAll(pageable)
+                .map(userMapper::toUserDetailsDto);
+    }
+
+    public Page<UserDetailsDto> getUsersDetailsByIdsPageable(List<Long> ids, Pageable pageable) {
+        return userPagingRepository.findAllByIdIn(ids, pageable)
+                .map(userMapper::toUserDetailsDto);
+    }
+
+    public Page<String> getStatusesByIdsPageable(List<Long> ids, Pageable pageable) {
+        return userPagingRepository.findAllByIdIn(ids, pageable)
+                .map(User::getStatus);
     }
 }
