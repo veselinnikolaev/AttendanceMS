@@ -18,6 +18,6 @@ public class UserClient {
     }
 
     public ResponseEntity<String[]> getStatusesForIds(List<Long> ids) {
-        return restTemplate.postForEntity(userServiceUrl + "/status", ids, String[].class);
+        return restTemplate.postForEntity(userServiceUrl + "/status?size=all", ids, String[].class);
     }
 }

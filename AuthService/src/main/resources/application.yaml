@@ -4,10 +4,6 @@ server:
 spring:
   application:
     name: AUTH_SERVICE
-  docker:
-    compose:
-      file: AuthService/compose.yaml
-
 
 eureka:
   client:

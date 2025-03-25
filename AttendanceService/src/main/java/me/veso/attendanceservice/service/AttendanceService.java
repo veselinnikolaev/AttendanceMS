@@ -10,11 +10,14 @@ import me.veso.attendanceservice.entity.Attendance;
 import me.veso.attendanceservice.entity.CategoryId;
 import me.veso.attendanceservice.entity.UserId;
 import me.veso.attendanceservice.mapper.AttendanceMapper;
+import me.veso.attendanceservice.repository.AttendancePagingRepository;
 import me.veso.attendanceservice.repository.AttendanceRepository;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.Caching;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,6 +33,7 @@ public class AttendanceService {
     private final CategoryIdService categoryService;
     private final RabbitClient rabbitClient;
     private final AttendanceMapper attendanceMapper;
+    private final AttendancePagingRepository attendancePagingRepository;
     private final AttendanceService self;
 
     public List<AttendanceDetailsDto> createAttendance(AttendanceCreationDto attendanceCreationDto) {
@@ -118,5 +122,15 @@ public class AttendanceService {
     })
     public void evictAttendanceFromCache(String categoryId) {
         log.info("Attendance evicted from cache with category id {}", categoryId);
+    }
+
+    public Page<AttendanceDetailsDto> getAttendanceForCategoryPageable(String categoryId, Pageable pageable) {
+        return attendancePagingRepository.findAllByCategory_CategoryId(categoryId, pageable)
+                .map(attendanceMapper::toAttendanceDetailsDto);
+    }
+
+    public Page<AttendanceDetailsDto> getAttendanceForUserPageable(Long userId, Pageable pageable) {
+        return attendancePagingRepository.findAllByUser_UserId(userId, pageable)
+                .map(attendanceMapper::toAttendanceDetailsDto);
     }
 }
