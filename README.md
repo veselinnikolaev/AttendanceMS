@@ -25,7 +25,8 @@ The Attendance Management System is a microservices-based application designed t
 - **Caching & Session Management:** Redis  
 - **Load Balancing & API Gateway:** Spring Cloud Gateway with JWT authentication filter  
 - **Containerization:** Docker for RabbitMQ and Redis  
-- **Email Notifications:** JavaMailSender with Mailtrap SMTP server  
+- **Email Notifications:** JavaMailSender with Mailtrap SMTP server
+- ![CodeRabbit Pull Request Reviews](https://img.shields.io/coderabbit/prs/github/veselinnikolaev/AttendanceMS?utm_source=oss&utm_medium=github&utm_campaign=veselinnikolaev%2FAttendanceMS&labelColor=171717&color=FF570A&link=https%3A%2F%2Fcoderabbit.ai&label=CodeRabbit+Reviews)
 
 ## Microservices Architecture
 The system consists of multiple microservices, each responsible for a specific functionality:
