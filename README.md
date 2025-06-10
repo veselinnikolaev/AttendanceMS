@@ -1,7 +1,7 @@
 # Attendance Management System
 
 ## Overview
-The Attendance Management System is a microservices-based application designed to efficiently manage and track attendance at the university level. It leverages modern technologies and architectural patterns to ensure scalability, security, and reliability.
+The Attendance Management System is a microservices-based application designed to efficiently manage and track attendance at the university level. It leverages modern technologies and architectural patterns to ensure scalability, security, and reliability. **This project was developed as part of an internship with CodeAlpha. The internship certificate is available [here](Veselin%20Nikolaev%20Certificate.pdf), and the letter of recommendation is [here](Veselin%20Nikolaev%20LOR.pdf).**
 
 ## Table of Contents
 - [Technologies Used](#technologies-used)
